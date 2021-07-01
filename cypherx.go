@@ -43,3 +43,7 @@ func (db *DB) SendQuery(cypher string, params map[string]interface{}) {
 		fmt.Println(record)
 	}
 }
+
+func (db *DB) Get(dest interface{}, cypher string, params map[string]interface{}) {
+
+}
