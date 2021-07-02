@@ -12,16 +12,7 @@ func TestDB(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = db.SendQuery("create (:Person{name: 'peter'})", map[string]interface{}{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = db.SendQuery("match (p:Person) return p", map[string]interface{}{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = db.SendQuery("match (n) delete n", map[string]interface{}{})
-	if err != nil {
-		t.Fatal(err)
-	}
+	db.SendQuery("create (:Person{name: 'peter'})", map[string]interface{}{})
+	db.SendQuery("match (p:Person) return p", map[string]interface{}{})
+	db.SendQuery("match (n) delete n", map[string]interface{}{})
 }

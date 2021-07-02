@@ -1,6 +1,7 @@
 package cypherx
 
 import (
+	"database/sql"
 	"reflect"
 	"strings"
 
@@ -36,6 +37,15 @@ func (m Mapper) Map(dest interface{}, props map[string]interface{}) error {
 }
 
 func (m Mapper) fillField(vf reflect.Value, pv interface{}) error {
+	// sql.Scanner を満たすフィールドには Scan メソッドを呼び出す
+	scannerIT := reflect.TypeOf((*sql.Scanner)(nil)).Elem()
+	vfPtr := reflect.PtrTo(vf.Type())
+	if vfPtr.Implements(scannerIT) {
+		vfAddr := vf.Addr()
+		vfAddr.MethodByName("Scan").Call([]reflect.Value{reflect.ValueOf(pv)})
+		return nil
+	}
+
 	switch vf.Kind() {
 	case reflect.String:
 		if s, ok := pv.(string); ok {

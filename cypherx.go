@@ -30,16 +30,14 @@ func NewDB(host, user, pass string) (*DB, error) {
 	}, nil
 }
 
-func (db *DB) SendQuery(cypher string, params map[string]interface{}) (neo4j.Result, error) {
+func (db *DB) SendQuery(cypher string, params map[string]interface{}) {
 	session := db.driver.NewSession(neo4j.SessionConfig{})
 	defer session.Close()
 
-	res, err := session.Run(cypher, params)
+	_, err := session.Run(cypher, params)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-
-	return res, nil
 }
 
 func (db *DB) Get(
