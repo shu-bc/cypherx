@@ -72,7 +72,7 @@ func (db *DB) Get(
 	m := Mapper{}
 	err = m.Map(dest, node.Props)
 	if err != nil {
-		return fmt.Errorf("fail to map result to dest: %w\n", err)
+		return fmt.Errorf("fail to assign props to dest: %w\n", err)
 	}
 
 	return nil
