@@ -41,9 +41,20 @@ func (m Mapper) fillField(vf reflect.Value, pv interface{}) error {
 		if s, ok := pv.(string); ok {
 			vf.SetString(s)
 		}
+
 	case reflect.Int:
 		if reflect.ValueOf(pv).Kind() == reflect.Int {
 			vf.SetInt(reflect.ValueOf(pv).Int())
+		}
+
+	case reflect.Float64:
+		if reflect.ValueOf(pv).Kind() == reflect.Float64 {
+			vf.SetFloat(reflect.ValueOf(pv).Float())
+		}
+
+	case reflect.Bool:
+		if b, ok := pv.(bool); ok {
+			vf.SetBool(b)
 		}
 	}
 	return nil
