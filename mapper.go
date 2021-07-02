@@ -53,7 +53,7 @@ func (m Mapper) fillField(vf reflect.Value, pv interface{}) error {
 		}
 
 	case reflect.Int:
-		if reflect.ValueOf(pv).Kind() == reflect.Int {
+		if reflect.ValueOf(pv).Kind() == reflect.Int64 {
 			vf.SetInt(reflect.ValueOf(pv).Int())
 		}
 

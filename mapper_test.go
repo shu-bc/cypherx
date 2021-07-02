@@ -20,7 +20,7 @@ func TestMap(t *testing.T) {
 	m := cypherx.Mapper{}
 	props := map[string]interface{}{
 		"name":      "test",
-		"age":       3,
+		"age":       int64(3),
 		"salary":    1000.1,
 		"del":       true,
 		"social_id": "aaaa",

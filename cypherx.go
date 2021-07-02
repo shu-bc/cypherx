@@ -64,9 +64,15 @@ func (db *DB) Get(
 		return fmt.Errorf("result should contain at least one record: %w\n", err)
 	}
 
-	_, ok := record.GetByIndex(0).(neo4j.Node)
+	node, ok := record.GetByIndex(0).(neo4j.Node)
 	if !ok {
 		return fmt.Errorf("type neo4j.Node assertion failure, unexpected result type\n")
+	}
+
+	m := Mapper{}
+	err = m.Map(dest, node.Props)
+	if err != nil {
+		return fmt.Errorf("fail to map result to dest: %w\n", err)
 	}
 
 	return nil
