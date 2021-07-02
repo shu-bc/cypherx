@@ -61,7 +61,7 @@ func (db *DB) Get(
 	var record *neo4j.Record
 	record, err = res.Single()
 	if err != nil {
-		return fmt.Errorf("result should contain at least one record: %w\n", err)
+		return fmt.Errorf("result must contain only one record: %w\n", err)
 	}
 
 	node, ok := record.GetByIndex(0).(neo4j.Node)
