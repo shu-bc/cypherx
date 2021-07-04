@@ -11,32 +11,32 @@ import (
 
 type Mapper struct {
 	typeCache []reflect.Type
+	propNames []string
 }
 
 var _scannerIt = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 
-func (m Mapper) Map(dest interface{}, props map[string]interface{}) error {
+func (m *Mapper) Map(dest interface{}, props map[string]interface{}) error {
+	rt := reflect.TypeOf(dest)
+
 	if !isValidDest(dest) {
 		return fmt.Errorf("dest must be a pointer to struct\n")
 	}
 
-	rt := reflect.TypeOf(dest).Elem()
+	if err := m.analyzeStruct(rt); err != nil {
+		return err
+	}
 
-	for i := 0; i < rt.NumField(); i++ {
-		tf := rt.Field(i)
-		tag := tf.Tag.Get("neo4j")
-		propName := strings.Split(tag, ",")[0]
-		if propName == "" {
-			propName = strcase.ToSnake(tf.Name)
-		}
-
-		pv, ok := props[propName]
+	for i, p := range m.propNames {
+		pv, ok := props[p]
 		if !ok {
 			continue
 		}
 
-		vf := reflect.ValueOf(dest).Elem().Field(i)
-		if err := m.fillField(vf, pv); err != nil {
+		rv := reflect.ValueOf(dest).Elem()
+		field := rv.Field(i)
+
+		if err := m.fillField(field, pv); err != nil {
 			return err
 		}
 	}
@@ -44,7 +44,39 @@ func (m Mapper) Map(dest interface{}, props map[string]interface{}) error {
 	return nil
 }
 
-func (m Mapper) fillField(vf reflect.Value, pv interface{}) error {
+func (m *Mapper) analyzeStruct(t reflect.Type) error {
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	if t.Kind() != reflect.Struct {
+		return fmt.Errorf("invalid type %s, expected struct\n", t.Kind().String())
+	}
+
+	if t.NumField() == 0 {
+		return fmt.Errorf("struct must have > 1 field\n")
+	}
+
+	names := make([]string, 0, t.NumField())
+	types := make([]reflect.Type, 0, t.NumField())
+	for i := 0; i < t.NumField(); i++ {
+		tf := t.Field(i)
+		tag := tf.Tag.Get("neo4j")
+		propName := strings.Split(tag, ",")[0]
+		if propName == "" {
+			propName = strcase.ToSnake(tf.Name)
+		}
+		names = append(names, propName)
+		types = append(types, t)
+	}
+
+	m.typeCache = types
+	m.propNames = names
+
+	return nil
+}
+
+func (m *Mapper) fillField(vf reflect.Value, pv interface{}) error {
 	// sql.Scanner を満たすフィールドには Scan メソッドを呼び出す
 	vfPtr := reflect.PtrTo(vf.Type())
 	if vfPtr.Implements(_scannerIt) {
