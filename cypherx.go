@@ -40,7 +40,7 @@ func (db *DB) SendQuery(cypher string, params map[string]interface{}) {
 	}
 }
 
-func (db *DB) Get(
+func (db *DB) GetNode(
 	dest interface{},
 	cypher string,
 	params map[string]interface{},

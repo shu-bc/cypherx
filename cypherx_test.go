@@ -28,7 +28,7 @@ func TestGet(t *testing.T) {
 	db.SendQuery("match (p:Person{name: 'peter'}) delete p", map[string]interface{}{})
 	db.SendQuery("merge (:Person{name: 'peter', age: 30,  salary: 1000.1, social_id: '123abc'})", map[string]interface{}{})
 	p := &Person{}
-	err = db.Get(p, "match (p:Person{name: 'peter'}) return p", map[string]interface{}{})
+	err = db.GetNode(p, "match (p:Person{name: 'peter'}) return p", map[string]interface{}{})
 	if err != nil {
 		t.Fatal(err)
 	}
