@@ -10,7 +10,7 @@ import (
 )
 
 type Mapper struct {
-	typeCache []reflect.Type
+	kindCache []reflect.Kind
 	propNames []string
 }
 
@@ -58,7 +58,7 @@ func (m *Mapper) analyzeStruct(t reflect.Type) error {
 	}
 
 	names := make([]string, 0, t.NumField())
-	types := make([]reflect.Type, 0, t.NumField())
+	types := make([]reflect.Kind, 0, t.NumField())
 	for i := 0; i < t.NumField(); i++ {
 		tf := t.Field(i)
 		tag := tf.Tag.Get("neo4j")
@@ -67,10 +67,10 @@ func (m *Mapper) analyzeStruct(t reflect.Type) error {
 			propName = strcase.ToSnake(tf.Name)
 		}
 		names = append(names, propName)
-		types = append(types, t)
+		types = append(types, t.Kind())
 	}
 
-	m.typeCache = types
+	m.kindCache = types
 	m.propNames = names
 
 	return nil
@@ -112,4 +112,9 @@ func (m *Mapper) fillField(vf reflect.Value, pv interface{}) error {
 func isValidDest(i interface{}) bool {
 	rv := reflect.ValueOf(i)
 	return rv.Kind() == reflect.Ptr && !rv.IsNil() && rv.Elem().Kind() == reflect.Struct
+}
+
+// reflect.Kind に対する、interface{} 値を代入する操作をする関数を生成する
+func generateAssignmentFunc(vf reflect.Kind) func(f reflect.Value, v interface{}) error {
+
 }
