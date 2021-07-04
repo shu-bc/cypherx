@@ -2,6 +2,7 @@ package cypherx
 
 import (
 	"database/sql"
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -9,9 +10,16 @@ import (
 )
 
 type Mapper struct {
+	typeCache []reflect.Type
 }
 
+var _scannerIt = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
+
 func (m Mapper) Map(dest interface{}, props map[string]interface{}) error {
+	if !isValidDest(dest) {
+		return fmt.Errorf("dest must be a pointer to struct\n")
+	}
+
 	rt := reflect.TypeOf(dest).Elem()
 
 	for i := 0; i < rt.NumField(); i++ {
@@ -38,9 +46,8 @@ func (m Mapper) Map(dest interface{}, props map[string]interface{}) error {
 
 func (m Mapper) fillField(vf reflect.Value, pv interface{}) error {
 	// sql.Scanner を満たすフィールドには Scan メソッドを呼び出す
-	scannerIT := reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 	vfPtr := reflect.PtrTo(vf.Type())
-	if vfPtr.Implements(scannerIT) {
+	if vfPtr.Implements(_scannerIt) {
 		vfAddr := vf.Addr()
 		vfAddr.MethodByName("Scan").Call([]reflect.Value{reflect.ValueOf(pv)})
 		return nil
@@ -68,4 +75,9 @@ func (m Mapper) fillField(vf reflect.Value, pv interface{}) error {
 		}
 	}
 	return nil
+}
+
+func isValidDest(i interface{}) bool {
+	rv := reflect.ValueOf(i)
+	return rv.Kind() == reflect.Ptr && !rv.IsNil() && rv.Elem().Kind() == reflect.Struct
 }
