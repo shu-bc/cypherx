@@ -21,6 +21,7 @@ func TestGenerateAssignmentFunc(t *testing.T) {
 	s := &struct {
 		Name sql.NullString
 		Desc string
+		Age  int
 	}{}
 
 	// Name
@@ -47,4 +48,16 @@ func TestGenerateAssignmentFunc(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, "description", s.Desc)
+
+	// Age
+	fv = reflect.ValueOf(s).Elem().Field(2)
+	f, err = generateAssignmentFunc(fv.Type())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := f(fv, int64(10)); err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 10, s.Age)
 }

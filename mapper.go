@@ -137,6 +137,17 @@ func generateAssignmentFunc(rt reflect.Type) (func(f reflect.Value, v interface{
 			// 渡された値が想定した型でなければ、無視をする
 			return nil
 		}, nil
+
+	// TODO: その他のint型の対応
+	case reflect.Int:
+		return func(f reflect.Value, v interface{}) error {
+			// neo4j の整数の型は int64 のみ
+			if v, ok := v.(int64); ok {
+				f.SetInt(v)
+			}
+			// 渡された値が想定した型でなければ、無視をする
+			return nil
+		}, nil
 	}
 
 	return nil, fmt.Errorf("cannot generate assignment func for %s type", rt.String())
