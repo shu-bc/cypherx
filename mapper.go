@@ -115,6 +115,16 @@ func isValidDest(i interface{}) bool {
 }
 
 // reflect.Kind に対する、interface{} 値を代入する操作をする関数を生成する
-func generateAssignmentFunc(vf reflect.Kind) func(f reflect.Value, v interface{}) error {
+// TODO: ポインタータイプの対応
+func generateAssignmentFunc(rt reflect.Type) func(f reflect.Value, v interface{}) error {
+	vfPtr := reflect.PtrTo(rt)
+	if vfPtr.Implements(_scannerIt) {
+		return func(f reflect.Value, v interface{}) error {
+			ptr := f.Addr()
+			ptr.MethodByName("Scan").Call([]reflect.Value{reflect.ValueOf(v)})
 
+			return nil
+		}
+	}
+	return nil
 }
