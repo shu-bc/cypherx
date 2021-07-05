@@ -38,8 +38,8 @@ func (m *Mapper) Map(dest interface{}, props map[string]interface{}) error {
 		rv := reflect.ValueOf(dest).Elem()
 		field := rv.Field(i)
 
-		f := m.assignFuncs[i]
-		if err := f(field, pv); err != nil {
+		assign := m.assignFuncs[i]
+		if err := assign(field, pv); err != nil {
 			return err
 		}
 	}
