@@ -39,3 +39,7 @@ func TestGet(t *testing.T) {
 	assert.True(t, p.SocialID.Valid)
 	assert.Equal(t, "123abc", p.SocialID.String)
 }
+
+func TestGetNodes(t *testing.T) {
+
+}

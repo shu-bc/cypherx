@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ettle/strcase"
+	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
 
 type Mapper struct {
@@ -44,6 +45,10 @@ func (m *Mapper) Map(dest interface{}, props map[string]interface{}) error {
 		}
 	}
 
+	return nil
+}
+
+func (m *Mapper) MapAll(dest *[]interface{}, result neo4j.Result) error {
 	return nil
 }
 

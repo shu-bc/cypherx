@@ -77,3 +77,29 @@ func (db *DB) GetNode(
 
 	return nil
 }
+
+func (db *DB) GetNodes(
+	dest *[]interface{},
+	cypher string,
+	params map[string]interface{},
+) error {
+	rv := reflect.ValueOf(dest)
+	if rv.Kind() != reflect.Ptr || rv.IsNil() {
+		return fmt.Errorf("dest must be a non-null pointer\n")
+	}
+
+	session := db.driver.NewSession(neo4j.SessionConfig{})
+	defer session.Close()
+
+	res, err := session.Run(cypher, params)
+	if err != nil {
+		return fmt.Errorf("cypher execution failure: %w\n", err)
+	}
+
+	m := Mapper{}
+	if err := m.MapAll(dest, res); err != nil {
+		return fmt.Errorf("fail to map all nodes to dest: %w\n", err)
+	}
+
+	return nil
+}
