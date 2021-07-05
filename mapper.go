@@ -10,11 +10,11 @@ import (
 )
 
 type Mapper struct {
-	assignFuncs []assignFunc
+	assignFuncs []assignmentFunc
 	propNames   []string
 }
 
-type assignFunc func(f reflect.Value, v interface{}) error
+type assignmentFunc func(f reflect.Value, v interface{}) error
 
 var _scannerIt = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 
@@ -61,7 +61,7 @@ func (m *Mapper) analyzeStruct(t reflect.Type) error {
 	}
 
 	names := make([]string, 0, t.NumField())
-	funcs := make([]assignFunc, 0, t.NumField())
+	funcs := make([]assignmentFunc, 0, t.NumField())
 	for i := 0; i < t.NumField(); i++ {
 		tf := t.Field(i)
 		tag := tf.Tag.Get("neo4j")
@@ -90,7 +90,7 @@ func isValidDest(i interface{}) bool {
 
 // reflect.Kind に対する、interface{} 値を代入する操作をする関数を生成する
 // TODO: ポインタータイプの対応
-func generateAssignmentFunc(rt reflect.Type) (assignFunc, error) {
+func generateAssignmentFunc(rt reflect.Type) (assignmentFunc, error) {
 	vfPtr := reflect.PtrTo(rt)
 	if vfPtr.Implements(_scannerIt) {
 		return func(f reflect.Value, v interface{}) error {
