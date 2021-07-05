@@ -10,9 +10,11 @@ import (
 )
 
 type Mapper struct {
-	kindCache []reflect.Kind
-	propNames []string
+	assignFuncs []assignFunc
+	propNames   []string
 }
+
+type assignFunc func(f reflect.Value, v interface{}) error
 
 var _scannerIt = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 
@@ -36,7 +38,8 @@ func (m *Mapper) Map(dest interface{}, props map[string]interface{}) error {
 		rv := reflect.ValueOf(dest).Elem()
 		field := rv.Field(i)
 
-		if err := m.fillField(field, pv); err != nil {
+		f := m.assignFuncs[i]
+		if err := f(field, pv); err != nil {
 			return err
 		}
 	}
@@ -58,7 +61,7 @@ func (m *Mapper) analyzeStruct(t reflect.Type) error {
 	}
 
 	names := make([]string, 0, t.NumField())
-	types := make([]reflect.Kind, 0, t.NumField())
+	funcs := make([]assignFunc, 0, t.NumField())
 	for i := 0; i < t.NumField(); i++ {
 		tf := t.Field(i)
 		tag := tf.Tag.Get("neo4j")
@@ -67,10 +70,14 @@ func (m *Mapper) analyzeStruct(t reflect.Type) error {
 			propName = strcase.ToSnake(tf.Name)
 		}
 		names = append(names, propName)
-		types = append(types, t.Kind())
+		f, err := generateAssignmentFunc(tf.Type)
+		if err != nil {
+			return err
+		}
+		funcs = append(funcs, f)
 	}
 
-	m.kindCache = types
+	m.assignFuncs = funcs
 	m.propNames = names
 
 	return nil
@@ -116,7 +123,7 @@ func isValidDest(i interface{}) bool {
 
 // reflect.Kind に対する、interface{} 値を代入する操作をする関数を生成する
 // TODO: ポインタータイプの対応
-func generateAssignmentFunc(rt reflect.Type) (func(f reflect.Value, v interface{}) error, error) {
+func generateAssignmentFunc(rt reflect.Type) (assignFunc, error) {
 	vfPtr := reflect.PtrTo(rt)
 	if vfPtr.Implements(_scannerIt) {
 		return func(f reflect.Value, v interface{}) error {
