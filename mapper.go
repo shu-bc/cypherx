@@ -116,7 +116,7 @@ func isValidDest(i interface{}) bool {
 
 // reflect.Kind に対する、interface{} 値を代入する操作をする関数を生成する
 // TODO: ポインタータイプの対応
-func generateAssignmentFunc(rt reflect.Type) func(f reflect.Value, v interface{}) error {
+func generateAssignmentFunc(rt reflect.Type) (func(f reflect.Value, v interface{}) error, error) {
 	vfPtr := reflect.PtrTo(rt)
 	if vfPtr.Implements(_scannerIt) {
 		return func(f reflect.Value, v interface{}) error {
@@ -124,7 +124,20 @@ func generateAssignmentFunc(rt reflect.Type) func(f reflect.Value, v interface{}
 			ptr.MethodByName("Scan").Call([]reflect.Value{reflect.ValueOf(v)})
 
 			return nil
-		}
+		}, nil
 	}
-	return nil
+
+	switch rt.Kind() {
+	case reflect.String:
+		return func(f reflect.Value, v interface{}) error {
+			if s, ok := v.(string); ok {
+				f.SetString(s)
+				return nil
+			}
+			// 渡された値が想定した型でなければ、無視をする
+			return nil
+		}, nil
+	}
+
+	return nil, fmt.Errorf("cannot generate assignment func for %s type", rt.String())
 }
