@@ -83,39 +83,6 @@ func (m *Mapper) analyzeStruct(t reflect.Type) error {
 	return nil
 }
 
-func (m *Mapper) fillField(vf reflect.Value, pv interface{}) error {
-	// sql.Scanner を満たすフィールドには Scan メソッドを呼び出す
-	vfPtr := reflect.PtrTo(vf.Type())
-	if vfPtr.Implements(_scannerIt) {
-		vfAddr := vf.Addr()
-		vfAddr.MethodByName("Scan").Call([]reflect.Value{reflect.ValueOf(pv)})
-		return nil
-	}
-
-	switch vf.Kind() {
-	case reflect.String:
-		if s, ok := pv.(string); ok {
-			vf.SetString(s)
-		}
-
-	case reflect.Int:
-		if reflect.ValueOf(pv).Kind() == reflect.Int64 {
-			vf.SetInt(reflect.ValueOf(pv).Int())
-		}
-
-	case reflect.Float64:
-		if reflect.ValueOf(pv).Kind() == reflect.Float64 {
-			vf.SetFloat(reflect.ValueOf(pv).Float())
-		}
-
-	case reflect.Bool:
-		if b, ok := pv.(bool); ok {
-			vf.SetBool(b)
-		}
-	}
-	return nil
-}
-
 func isValidDest(i interface{}) bool {
 	rv := reflect.ValueOf(i)
 	return rv.Kind() == reflect.Ptr && !rv.IsNil() && rv.Elem().Kind() == reflect.Struct
