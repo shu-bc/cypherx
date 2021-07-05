@@ -134,7 +134,6 @@ func generateAssignmentFunc(rt reflect.Type) (func(f reflect.Value, v interface{
 				f.SetString(s)
 				return nil
 			}
-			// 渡された値が想定した型でなければ、無視をする
 			return nil
 		}, nil
 
@@ -145,7 +144,23 @@ func generateAssignmentFunc(rt reflect.Type) (func(f reflect.Value, v interface{
 			if v, ok := v.(int64); ok {
 				f.SetInt(v)
 			}
-			// 渡された値が想定した型でなければ、無視をする
+			return nil
+		}, nil
+
+	// TODO: float32 の対応の必要か？
+	case reflect.Float64:
+		return func(f reflect.Value, v interface{}) error {
+			if v, ok := v.(float64); ok {
+				f.SetFloat(v)
+			}
+			return nil
+		}, nil
+
+	case reflect.Bool:
+		return func(f reflect.Value, v interface{}) error {
+			if v, ok := v.(bool); ok {
+				f.SetBool(v)
+			}
 			return nil
 		}, nil
 	}
