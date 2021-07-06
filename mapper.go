@@ -72,6 +72,7 @@ func (m *Mapper) MapAll(dest interface{}, result neo4j.Result) error {
 			return NotNodeTypeErr
 		}
 
+		// st はポインターになる
 		st := reflect.New(structType)
 		props := node.Props
 		for i, p := range m.propNames {

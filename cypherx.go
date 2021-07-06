@@ -45,6 +45,23 @@ func (db *DB) SendQuery(cypher string, params map[string]interface{}) {
 	}
 }
 
+func (db *DB) Query(cypher string, params map[string]interface{}) (interface{}, error) {
+	session := db.driver.NewSession(neo4j.SessionConfig{})
+	defer session.Close()
+
+	res, err := session.Run(cypher, params)
+	if err != nil {
+		panic(err)
+	}
+
+	result := [][]interface{}{}
+	var record *neo4j.Record
+	for res.NextRecord(&record) {
+		result = append(result, record.Values)
+	}
+	return result, nil
+}
+
 func (db *DB) GetNode(
 	dest interface{},
 	cypher string,
