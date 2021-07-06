@@ -16,18 +16,6 @@ type Person struct {
 	SocialID sql.NullString
 }
 
-func TestDB(t *testing.T) {
-	t.Skip()
-	db := &DB{}
-	if err := db.Connect("bolt://neo4j", "", ""); err != nil {
-		t.Fatal(err)
-	}
-
-	db.SendQuery("create (:Person{name: 'peter'})", nil)
-	db.SendQuery("match (p:Person) return p", nil)
-	db.SendQuery("match (n) delete n", nil)
-}
-
 func TestGetNode(t *testing.T) {
 	db := &DB{}
 	if err := db.Connect("bolt://neo4j", "", ""); err != nil {
