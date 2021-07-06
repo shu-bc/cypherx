@@ -1,16 +1,24 @@
-package cypherx_test
+package cypherx
 
 import (
+	"database/sql"
 	"fmt"
 	"testing"
 
-	"github.com/shu-bc/cypherx"
 	"github.com/stretchr/testify/assert"
 )
 
+type Person struct {
+	Name     string `neo4j:"name"`
+	Age      int
+	Salary   float64
+	Deleted  bool `neo4j:"del"`
+	SocialID sql.NullString
+}
+
 func TestDB(t *testing.T) {
 	t.Skip()
-	db, err := cypherx.NewDB("bolt://neo4j", "", "")
+	db, err := NewDB("bolt://neo4j", "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -21,7 +29,7 @@ func TestDB(t *testing.T) {
 }
 
 func TestGetNode(t *testing.T) {
-	db, err := cypherx.NewDB("bolt://neo4j", "", "")
+	db, err := NewDB("bolt://neo4j", "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +50,7 @@ func TestGetNode(t *testing.T) {
 }
 
 func TestGetNodes(t *testing.T) {
-	db, err := cypherx.NewDB("bolt://neo4j", "", "")
+	db, err := NewDB("bolt://neo4j", "", "")
 	if err != nil {
 		t.Fatal(err)
 	}

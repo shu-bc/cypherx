@@ -91,8 +91,8 @@ func (db *DB) GetNode(
 		return NotNodeTypeErr
 	}
 
-	m := Mapper{}
-	err = m.Scan(dest, node.Props)
+	m := mapper{}
+	err = m.scan(dest, node.Props)
 	if err != nil {
 		return fmt.Errorf("fail to assign props to dest: %w\n", err)
 	}
@@ -118,8 +118,8 @@ func (db *DB) GetNodes(
 		return fmt.Errorf("cypher execution failure: %w\n", err)
 	}
 
-	m := Mapper{}
-	if err := m.ScanAll(dest, res); err != nil {
+	m := mapper{}
+	if err := m.scanAll(dest, res); err != nil {
 		return fmt.Errorf("fail to map all nodes to dest: %w\n", err)
 	}
 

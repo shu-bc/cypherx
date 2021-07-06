@@ -1,23 +1,15 @@
-package cypherx_test
+package cypherx
 
 import (
 	"database/sql"
+	"reflect"
 	"testing"
 
-	"github.com/shu-bc/cypherx"
 	"github.com/stretchr/testify/assert"
 )
 
-type Person struct {
-	Name     string `neo4j:"name"`
-	Age      int
-	Salary   float64
-	Deleted  bool `neo4j:"del"`
-	SocialID sql.NullString
-}
-
 func TestMap(t *testing.T) {
-	m := cypherx.Mapper{}
+	m := mapper{}
 	props := map[string]interface{}{
 		"name":      "test",
 		"age":       int64(3),
@@ -26,7 +18,7 @@ func TestMap(t *testing.T) {
 		"social_id": "aaaa",
 	}
 	p := &Person{}
-	err := m.Scan(p, props)
+	err := m.scan(p, props)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,11 +36,11 @@ func TestMap(t *testing.T) {
 }
 
 func TestMapAll(t *testing.T) {
-	m := cypherx.Mapper{}
+	m := mapper{}
 
 	var ps []Person
 	t.Run("type check", func(t *testing.T) {
-		err := m.ScanAll(ps, nil)
+		err := m.scanAll(ps, nil)
 		assert.Error(t, err)
 	})
 
@@ -58,7 +50,87 @@ func TestMapAll(t *testing.T) {
 	// })
 
 	t.Run("type check", func(t *testing.T) {
-		err := m.ScanAll([]int{}, nil)
+		err := m.scanAll([]int{}, nil)
 		assert.Error(t, err)
 	})
+}
+
+func TestIsValidPtr(t *testing.T) {
+	s := struct{}{}
+	assert.True(t, isValidPtr(&s))
+	assert.False(t, isValidPtr(s))
+	assert.False(t, isValidPtr(map[string]interface{}{}))
+}
+
+func TestGenerateAssignmentFunc(t *testing.T) {
+	// 必ずstructのポインターからフィールドを取得する必要があります
+	// reflect.Value の CanAddr()の条件を参照
+	s := &struct {
+		Name        sql.NullString
+		Description string
+		Age         int
+		Height      float64
+		Alive       bool
+	}{}
+
+	// Name
+	fv := reflect.ValueOf(s).Elem().Field(0)
+	f, err := generateAssignmentFunc(fv.Type())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := f(fv, "aaa"); err != nil {
+		t.Fatal(err)
+	}
+	assert.True(t, s.Name.Valid)
+	assert.Equal(t, "aaa", s.Name.String)
+
+	// Desc
+	fv = reflect.ValueOf(s).Elem().Field(1)
+	f, err = generateAssignmentFunc(fv.Type())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := f(fv, "description"); err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, "description", s.Description)
+
+	// Age
+	fv = reflect.ValueOf(s).Elem().Field(2)
+	f, err = generateAssignmentFunc(fv.Type())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := f(fv, int64(10)); err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 10, s.Age)
+
+	// Height
+	fv = reflect.ValueOf(s).Elem().Field(3)
+	f, err = generateAssignmentFunc(fv.Type())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := f(fv, float64(100)); err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, float64(100), s.Height)
+
+	// Alive
+	fv = reflect.ValueOf(s).Elem().Field(4)
+	f, err = generateAssignmentFunc(fv.Type())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := f(fv, true); err != nil {
+		t.Fatal(err)
+	}
+	assert.True(t, s.Alive)
 }

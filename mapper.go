@@ -10,7 +10,7 @@ import (
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
 
-type Mapper struct {
+type mapper struct {
 	assignFuncs []assignmentFunc
 	propNames   []string
 }
@@ -19,7 +19,7 @@ type assignmentFunc func(f reflect.Value, v interface{}) error
 
 var _scannerIt = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 
-func (m *Mapper) Scan(dest interface{}, props map[string]interface{}) error {
+func (m *mapper) scan(dest interface{}, props map[string]interface{}) error {
 	rt := reflect.TypeOf(dest)
 
 	if !isValidPtr(dest) || rt.Elem().Kind() != reflect.Struct {
@@ -48,7 +48,7 @@ func (m *Mapper) Scan(dest interface{}, props map[string]interface{}) error {
 	return nil
 }
 
-func (m *Mapper) ScanAll(dest interface{}, result neo4j.Result) error {
+func (m *mapper) scanAll(dest interface{}, result neo4j.Result) error {
 	rt := reflect.TypeOf(dest)
 
 	if !isValidPtr(rt) ||
@@ -94,7 +94,7 @@ func (m *Mapper) ScanAll(dest interface{}, result neo4j.Result) error {
 	return nil
 }
 
-func (m *Mapper) analyzeStruct(t reflect.Type) error {
+func (m *mapper) analyzeStruct(t reflect.Type) error {
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
