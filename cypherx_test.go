@@ -15,9 +15,9 @@ func TestDB(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	db.SendQuery("create (:Person{name: 'peter'})", map[string]interface{}{})
-	db.SendQuery("match (p:Person) return p", map[string]interface{}{})
-	db.SendQuery("match (n) delete n", map[string]interface{}{})
+	db.SendQuery("create (:Person{name: 'peter'})", nil)
+	db.SendQuery("match (p:Person) return p", nil)
+	db.SendQuery("match (n) delete n", nil)
 }
 
 func TestGetNode(t *testing.T) {
@@ -26,10 +26,10 @@ func TestGetNode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	db.SendQuery("match (p:Person{name: 'peter'}) delete p", map[string]interface{}{})
-	db.SendQuery("merge (:Person{name: 'peter', age: 30,  salary: 1000.1, social_id: '123abc'})", map[string]interface{}{})
+	db.SendQuery("match (p:Person{name: 'peter'}) delete p", nil)
+	db.SendQuery("merge (:Person{name: 'peter', age: 30,  salary: 1000.1, social_id: '123abc'})", nil)
 	p := &Person{}
-	err = db.GetNode(p, "match (p:Person{name: 'peter'}) return p", map[string]interface{}{})
+	err = db.GetNode(p, "match (p:Person{name: 'peter'}) return p", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
