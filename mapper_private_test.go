@@ -8,22 +8,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIsValidDest(t *testing.T) {
+func TestIsValidPtr(t *testing.T) {
 	s := struct{}{}
-	assert.True(t, isValidDest(&s))
-	assert.False(t, isValidDest(s))
-	assert.False(t, isValidDest(map[string]interface{}{}))
+	assert.True(t, isValidPtr(&s))
+	assert.False(t, isValidPtr(s))
+	assert.False(t, isValidPtr(map[string]interface{}{}))
 }
 
 func TestGenerateAssignmentFunc(t *testing.T) {
 	// 必ずstructのポインターからフィールドを取得する必要があります
 	// reflect.Value の CanAddr()の条件を参照
 	s := &struct {
-		Name   sql.NullString
-		Desc   string
-		Age    int
-		Height float64
-		Alive  bool
+		Name        sql.NullString
+		Description string
+		Age         int
+		Height      float64
+		Alive       bool
 	}{}
 
 	// Name
@@ -49,7 +49,7 @@ func TestGenerateAssignmentFunc(t *testing.T) {
 	if err := f(fv, "description"); err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, "description", s.Desc)
+	assert.Equal(t, "description", s.Description)
 
 	// Age
 	fv = reflect.ValueOf(s).Elem().Field(2)

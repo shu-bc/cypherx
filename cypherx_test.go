@@ -1,6 +1,7 @@
 package cypherx_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/shu-bc/cypherx"
@@ -19,7 +20,7 @@ func TestDB(t *testing.T) {
 	db.SendQuery("match (n) delete n", map[string]interface{}{})
 }
 
-func TestGet(t *testing.T) {
+func TestGetNode(t *testing.T) {
 	db, err := cypherx.NewDB("bolt://neo4j", "", "")
 	if err != nil {
 		t.Fatal(err)
@@ -41,5 +42,20 @@ func TestGet(t *testing.T) {
 }
 
 func TestGetNodes(t *testing.T) {
+	db, err := cypherx.NewDB("bolt://neo4j", "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
 
+	db.SendQuery("match (p:Person{name: 'GetNodesTest'}) delete p", nil)
+	db.SendQuery("merge (:Person{name: 'GetNodesTest', age: 30,  salary: 1000.1, social_id: '123abc'})", nil)
+	db.SendQuery("merge (:Person{name: 'GetNodesTest', age: 25,  salary: 1200.1, social_id: 'abc123'})", nil)
+
+	ps := &[]Person{}
+	err = db.GetNodes(ps, "match (p:Person) where p.name = 'GetNodesTest' return p", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println(ps)
 }

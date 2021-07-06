@@ -42,3 +42,23 @@ func TestMap(t *testing.T) {
 		},
 		p)
 }
+
+func TestMapAll(t *testing.T) {
+	m := cypherx.Mapper{}
+
+	var ps []Person
+	t.Run("type check", func(t *testing.T) {
+		err := m.MapAll(ps, nil)
+		assert.Error(t, err)
+	})
+
+	// t.Run("type check", func(t *testing.T) {
+	// 	err := m.MapAll(&ps, nil)
+	// 	assert.NoError(t, err)
+	// })
+
+	t.Run("type check", func(t *testing.T) {
+		err := m.MapAll([]int{}, nil)
+		assert.Error(t, err)
+	})
+}

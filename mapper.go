@@ -22,7 +22,7 @@ var _scannerIt = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 func (m *Mapper) Map(dest interface{}, props map[string]interface{}) error {
 	rt := reflect.TypeOf(dest)
 
-	if !isValidDest(dest) {
+	if !isValidPtr(dest) || rt.Elem().Kind() != reflect.Struct {
 		return fmt.Errorf("dest must be a pointer to struct\n")
 	}
 
@@ -48,7 +48,48 @@ func (m *Mapper) Map(dest interface{}, props map[string]interface{}) error {
 	return nil
 }
 
-func (m *Mapper) MapAll(dest *[]interface{}, result neo4j.Result) error {
+func (m *Mapper) MapAll(dest interface{}, result neo4j.Result) error {
+	rt := reflect.TypeOf(dest)
+
+	if !isValidPtr(rt) ||
+		rt.Elem().Kind() != reflect.Slice ||
+		rt.Elem().Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("dest must be valid pointer to a slice of struct\n")
+	}
+
+	structType := rt.Elem().Elem()
+	if err := m.analyzeStruct(structType); err != nil {
+		return err
+	}
+
+	rv := reflect.ValueOf(dest)
+
+	var record *neo4j.Record
+	for result.NextRecord(&record) {
+		v := record.GetByIndex(0)
+		node, ok := v.(neo4j.Node)
+		if !ok {
+			return NotNodeTypeErr
+		}
+
+		st := reflect.New(structType)
+		props := node.Props
+		for i, p := range m.propNames {
+			pv, ok := props[p]
+			if !ok {
+				continue
+			}
+
+			field := st.Elem().Field(i)
+
+			assign := m.assignFuncs[i]
+			if err := assign(field, pv); err != nil {
+				return err
+			}
+		}
+		rv.Elem().Set(reflect.Append(rv.Elem(), st.Elem()))
+	}
+
 	return nil
 }
 
@@ -88,13 +129,13 @@ func (m *Mapper) analyzeStruct(t reflect.Type) error {
 	return nil
 }
 
-func isValidDest(i interface{}) bool {
+func isValidPtr(i interface{}) bool {
 	rv := reflect.ValueOf(i)
-	return rv.Kind() == reflect.Ptr && !rv.IsNil() && rv.Elem().Kind() == reflect.Struct
+	return rv.Kind() == reflect.Ptr && !rv.IsNil()
 }
 
-// reflect.Kind に対する、interface{} 値を代入する操作をする関数を生成する
 // TODO: ポインタータイプの対応
+// reflect.Kind に対する、interface{} 値を代入する操作をする関数を生成する
 func generateAssignmentFunc(rt reflect.Type) (assignmentFunc, error) {
 	vfPtr := reflect.PtrTo(rt)
 	if vfPtr.Implements(_scannerIt) {
@@ -117,7 +158,7 @@ func generateAssignmentFunc(rt reflect.Type) (assignmentFunc, error) {
 		}, nil
 
 	// TODO: その他のint型の対応
-	case reflect.Int:
+	case reflect.Int, reflect.Int64:
 		return func(f reflect.Value, v interface{}) error {
 			// neo4j の整数の型は int64 のみ
 			if v, ok := v.(int64); ok {

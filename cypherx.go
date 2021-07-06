@@ -1,6 +1,7 @@
 package cypherx
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -10,6 +11,10 @@ import (
 type DB struct {
 	driver neo4j.Driver
 }
+
+var (
+	NotNodeTypeErr = errors.New("type neo4j.Node assertion failure, unexpected result type\n")
+)
 
 func NewDB(host, user, pass string) (*DB, error) {
 	d, err := neo4j.NewDriver(
@@ -66,7 +71,7 @@ func (db *DB) GetNode(
 
 	node, ok := record.GetByIndex(0).(neo4j.Node)
 	if !ok {
-		return fmt.Errorf("type neo4j.Node assertion failure, unexpected result type\n")
+		return NotNodeTypeErr
 	}
 
 	m := Mapper{}
@@ -79,12 +84,12 @@ func (db *DB) GetNode(
 }
 
 func (db *DB) GetNodes(
-	dest *[]interface{},
+	dest interface{},
 	cypher string,
 	params map[string]interface{},
 ) error {
 	rv := reflect.ValueOf(dest)
-	if rv.Kind() != reflect.Ptr || rv.IsNil() {
+	if rv.IsNil() {
 		return fmt.Errorf("dest must be a non-null pointer\n")
 	}
 
