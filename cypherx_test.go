@@ -22,8 +22,8 @@ func TestGetNode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	db.SendQuery("match (p:Person{name: 'peter'}) delete p", nil)
-	db.SendQuery("merge (:Person{name: 'peter', age: 30,  salary: 1000.1, social_id: '123abc'})", nil)
+	db.ExecQuery("match (p:Person{name: 'peter'}) delete p", nil)
+	db.ExecQuery("merge (:Person{name: 'peter', age: 30,  salary: 1000.1, social_id: '123abc'})", nil)
 	p := &Person{}
 	err := db.GetNode(p, "match (p:Person{name: 'peter'}) return p", nil)
 	if err != nil {
@@ -43,9 +43,9 @@ func TestGetNodes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	db.SendQuery("match (p:Person{name: 'GetNodesTest'}) delete p", nil)
-	db.SendQuery("merge (:Person{name: 'GetNodesTest', age: 30,  salary: 1000.1, social_id: '123abc'})", nil)
-	db.SendQuery("merge (:Person{name: 'GetNodesTest', age: 25,  salary: 1200.1, social_id: 'abc123'})", nil)
+	db.ExecQuery("match (p:Person{name: 'GetNodesTest'}) delete p", nil)
+	db.ExecQuery("merge (:Person{name: 'GetNodesTest', age: 30,  salary: 1000.1, social_id: '123abc'})", nil)
+	db.ExecQuery("merge (:Person{name: 'GetNodesTest', age: 25,  salary: 1200.1, social_id: 'abc123'})", nil)
 
 	ps := &[]Person{}
 	err := db.GetNodes(ps, "match (p:Person) where p.name = 'GetNodesTest' return p", nil)

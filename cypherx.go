@@ -39,7 +39,7 @@ func (db *DB) Connect(host, user, pass string) error {
 	return nil
 }
 
-func (db *DB) SendQuery(cypher string, params map[string]interface{}) {
+func (db *DB) ExecQuery(cypher string, params map[string]interface{}) {
 	session := db.driver.NewSession(neo4j.SessionConfig{})
 	defer session.Close()
 
