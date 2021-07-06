@@ -51,7 +51,7 @@ func (db *DB) ExecQuery(cypher string, params map[string]interface{}) error {
 	return nil
 }
 
-func (db *DB) Query(cypher string, params map[string]interface{}) (interface{}, error) {
+func (db *DB) RawResult(cypher string, params map[string]interface{}) (interface{}, error) {
 	session := db.driver.NewSession(neo4j.SessionConfig{})
 	defer session.Close()
 
