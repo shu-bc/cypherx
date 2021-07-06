@@ -16,7 +16,11 @@ var (
 	NotNodeTypeErr = errors.New("type neo4j.Node assertion failure, unexpected result type\n")
 )
 
-func NewDB(host, user, pass string) (*DB, error) {
+func NewDB(driver neo4j.Driver) *DB {
+	return &DB{driver: driver}
+}
+
+func (db *DB) Connect(host, user, pass string) error {
 	d, err := neo4j.NewDriver(
 		host,
 		neo4j.BasicAuth(
@@ -27,12 +31,12 @@ func NewDB(host, user, pass string) (*DB, error) {
 	)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &DB{
-		driver: d,
-	}, nil
+	db.driver = d
+
+	return nil
 }
 
 func (db *DB) SendQuery(cypher string, params map[string]interface{}) {
