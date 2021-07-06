@@ -39,14 +39,16 @@ func (db *DB) Connect(host, user, pass string) error {
 	return nil
 }
 
-func (db *DB) ExecQuery(cypher string, params map[string]interface{}) {
+func (db *DB) ExecQuery(cypher string, params map[string]interface{}) error {
 	session := db.driver.NewSession(neo4j.SessionConfig{})
 	defer session.Close()
 
 	_, err := session.Run(cypher, params)
 	if err != nil {
-		panic(err)
+		return err
 	}
+
+	return nil
 }
 
 func (db *DB) Query(cypher string, params map[string]interface{}) (interface{}, error) {
@@ -55,7 +57,7 @@ func (db *DB) Query(cypher string, params map[string]interface{}) (interface{}, 
 
 	res, err := session.Run(cypher, params)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	result := [][]interface{}{}
