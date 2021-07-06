@@ -26,7 +26,7 @@ func TestMap(t *testing.T) {
 		"social_id": "aaaa",
 	}
 	p := &Person{}
-	err := m.Map(p, props)
+	err := m.Scan(p, props)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +48,7 @@ func TestMapAll(t *testing.T) {
 
 	var ps []Person
 	t.Run("type check", func(t *testing.T) {
-		err := m.MapAll(ps, nil)
+		err := m.ScanAll(ps, nil)
 		assert.Error(t, err)
 	})
 
@@ -58,7 +58,7 @@ func TestMapAll(t *testing.T) {
 	// })
 
 	t.Run("type check", func(t *testing.T) {
-		err := m.MapAll([]int{}, nil)
+		err := m.ScanAll([]int{}, nil)
 		assert.Error(t, err)
 	})
 }

@@ -19,7 +19,7 @@ type assignmentFunc func(f reflect.Value, v interface{}) error
 
 var _scannerIt = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 
-func (m *Mapper) Map(dest interface{}, props map[string]interface{}) error {
+func (m *Mapper) Scan(dest interface{}, props map[string]interface{}) error {
 	rt := reflect.TypeOf(dest)
 
 	if !isValidPtr(dest) || rt.Elem().Kind() != reflect.Struct {
@@ -48,7 +48,7 @@ func (m *Mapper) Map(dest interface{}, props map[string]interface{}) error {
 	return nil
 }
 
-func (m *Mapper) MapAll(dest interface{}, result neo4j.Result) error {
+func (m *Mapper) ScanAll(dest interface{}, result neo4j.Result) error {
 	rt := reflect.TypeOf(dest)
 
 	if !isValidPtr(rt) ||

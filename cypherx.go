@@ -92,7 +92,7 @@ func (db *DB) GetNode(
 	}
 
 	m := Mapper{}
-	err = m.Map(dest, node.Props)
+	err = m.Scan(dest, node.Props)
 	if err != nil {
 		return fmt.Errorf("fail to assign props to dest: %w\n", err)
 	}
@@ -119,7 +119,7 @@ func (db *DB) GetNodes(
 	}
 
 	m := Mapper{}
-	if err := m.MapAll(dest, res); err != nil {
+	if err := m.ScanAll(dest, res); err != nil {
 		return fmt.Errorf("fail to map all nodes to dest: %w\n", err)
 	}
 
