@@ -3,7 +3,6 @@ package cypherx
 import (
 	"errors"
 	"fmt"
-	"reflect"
 
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
@@ -14,6 +13,7 @@ type DB struct {
 
 var (
 	NotNodeTypeErr = errors.New("type neo4j.Node assertion failure, unexpected result type\n")
+	NotValidPtrErr = errors.New("dest must be a non-null pointer\n")
 )
 
 func NewDB(driver neo4j.Driver) *DB {
@@ -68,14 +68,17 @@ func (db *DB) RawResult(cypher string, params map[string]interface{}) (interface
 	return result, nil
 }
 
+func (db *DB) QueryAny(dest interface{}, params map[string]interface{}) error {
+	return nil
+}
+
 func (db *DB) GetNode(
 	dest interface{},
 	cypher string,
 	params map[string]interface{},
 ) error {
-	rv := reflect.ValueOf(dest)
-	if rv.Kind() != reflect.Ptr || rv.IsNil() {
-		return fmt.Errorf("dest must be a non-null pointer\n")
+	if isValidPtr(dest) {
+		return NotValidPtrErr
 	}
 
 	session := db.driver.NewSession(neo4j.SessionConfig{})
@@ -111,9 +114,8 @@ func (db *DB) GetNodes(
 	cypher string,
 	params map[string]interface{},
 ) error {
-	rv := reflect.ValueOf(dest)
-	if rv.IsNil() {
-		return fmt.Errorf("dest must be a non-null pointer\n")
+	if isValidPtr(dest) {
+		return NotValidPtrErr
 	}
 
 	session := db.driver.NewSession(neo4j.SessionConfig{})
