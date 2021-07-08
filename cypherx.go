@@ -77,7 +77,7 @@ func (db *DB) GetNode(
 	cypher string,
 	params map[string]interface{},
 ) error {
-	if isValidPtr(dest) {
+	if !isValidPtr(dest) {
 		return NotValidPtrErr
 	}
 
@@ -114,7 +114,7 @@ func (db *DB) GetNodes(
 	cypher string,
 	params map[string]interface{},
 ) error {
-	if isValidPtr(dest) {
+	if !isValidPtr(dest) {
 		return NotValidPtrErr
 	}
 
