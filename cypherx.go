@@ -151,3 +151,29 @@ func (db *DB) GetNodes(
 
 	return nil
 }
+
+func (db *DB) handleQuery(
+	dest interface{},
+	cypher string,
+	params map[string]interface{},
+	handleResult func(result neo4j.Result, dest interface{}) error,
+) error {
+	session := db.driver.NewSession(neo4j.SessionConfig{})
+	defer session.Close()
+
+	res, err := session.Run(cypher, params)
+	if err != nil {
+		return err
+	}
+
+	// do nothing when dest is nil
+	if dest == nil {
+		return nil
+	}
+
+	handleResult(res, dest)
+
+	return nil
+}
+
+type TransactionConfig neo4j.TransactionConfig
