@@ -14,6 +14,7 @@ type Person struct {
 	Salary   float64
 	Deleted  bool `neo4j:"del"`
 	SocialID sql.NullString
+	p        string // for private field test
 }
 
 func TestGetNode(t *testing.T) {

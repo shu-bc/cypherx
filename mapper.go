@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/ettle/strcase"
@@ -14,6 +15,8 @@ type mapper struct {
 	assignFuncs []assignmentFunc
 	propNames   []string
 }
+
+var publicFieldReg = regexp.MustCompile(`^[A-Z]+`)
 
 type assignmentFunc func(f reflect.Value, v interface{}) error
 
@@ -140,6 +143,11 @@ func (m *mapper) analyzeStruct(t reflect.Type) error {
 	funcs := make([]assignmentFunc, 0, t.NumField())
 	for i := 0; i < t.NumField(); i++ {
 		tf := t.Field(i)
+		// ignore private field
+		if !publicFieldReg.MatchString(tf.Name) {
+			continue
+		}
+
 		tag := tf.Tag.Get("neo4j")
 		propName := strings.Split(tag, ",")[0]
 		if propName == "" {
