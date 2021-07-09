@@ -2,6 +2,7 @@ package cypherx
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -21,6 +22,8 @@ var publicFieldReg = regexp.MustCompile(`^[A-Z]+`)
 type assignmentFunc func(f reflect.Value, v interface{}) error
 
 var _scannerIt = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
+
+var UnsettableValueErr = errors.New("unsettable reflect value\n")
 
 func (m *mapper) scan(dest interface{}, props map[string]interface{}) error {
 	rt := reflect.TypeOf(dest)
@@ -188,6 +191,10 @@ func generateAssignmentFunc(rt reflect.Type) (assignmentFunc, error) {
 	switch rt.Kind() {
 	case reflect.String:
 		return func(f reflect.Value, v interface{}) error {
+			if !f.CanSet() {
+				return UnsettableValueErr
+			}
+
 			if s, ok := v.(string); ok {
 				f.SetString(s)
 				return nil
@@ -199,6 +206,10 @@ func generateAssignmentFunc(rt reflect.Type) (assignmentFunc, error) {
 	// TODO: その他のint型の対応
 	case reflect.Int, reflect.Int64:
 		return func(f reflect.Value, v interface{}) error {
+			if !f.CanSet() {
+				return UnsettableValueErr
+			}
+
 			// neo4j の整数の型は int64 のみ
 			if v, ok := v.(int64); ok {
 				f.SetInt(v)
@@ -211,6 +222,10 @@ func generateAssignmentFunc(rt reflect.Type) (assignmentFunc, error) {
 	// TODO: float32 の対応の必要か？
 	case reflect.Float64:
 		return func(f reflect.Value, v interface{}) error {
+			if !f.CanSet() {
+				return UnsettableValueErr
+			}
+
 			if v, ok := v.(float64); ok {
 				f.SetFloat(v)
 				return nil
@@ -221,6 +236,10 @@ func generateAssignmentFunc(rt reflect.Type) (assignmentFunc, error) {
 
 	case reflect.Bool:
 		return func(f reflect.Value, v interface{}) error {
+			if !f.CanSet() {
+				return UnsettableValueErr
+			}
+
 			if v, ok := v.(bool); ok {
 				f.SetBool(v)
 				return nil
