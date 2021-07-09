@@ -97,6 +97,8 @@ func TestGenerateAssignmentFunc(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, "description", s.Description)
+	err = f(fv, 123)
+	assert.Error(t, err)
 
 	// Age
 	fv = reflect.ValueOf(s).Elem().Field(2)

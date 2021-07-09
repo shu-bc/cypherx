@@ -192,7 +192,8 @@ func generateAssignmentFunc(rt reflect.Type) (assignmentFunc, error) {
 				f.SetString(s)
 				return nil
 			}
-			return nil
+
+			return fmt.Errorf("unexpected value type %T, expect string\n", v)
 		}, nil
 
 	// TODO: その他のint型の対応
@@ -201,8 +202,10 @@ func generateAssignmentFunc(rt reflect.Type) (assignmentFunc, error) {
 			// neo4j の整数の型は int64 のみ
 			if v, ok := v.(int64); ok {
 				f.SetInt(v)
+				return nil
 			}
-			return nil
+
+			return fmt.Errorf("unexpected value type %T, expect int, int64\n", v)
 		}, nil
 
 	// TODO: float32 の対応の必要か？
@@ -210,16 +213,20 @@ func generateAssignmentFunc(rt reflect.Type) (assignmentFunc, error) {
 		return func(f reflect.Value, v interface{}) error {
 			if v, ok := v.(float64); ok {
 				f.SetFloat(v)
+				return nil
 			}
-			return nil
+
+			return fmt.Errorf("unexpected value type %T, expect float64\n", v)
 		}, nil
 
 	case reflect.Bool:
 		return func(f reflect.Value, v interface{}) error {
 			if v, ok := v.(bool); ok {
 				f.SetBool(v)
+				return nil
 			}
-			return nil
+
+			return fmt.Errorf("unexpected value type %T, expect bool\n", v)
 		}, nil
 	}
 
