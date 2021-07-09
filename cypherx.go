@@ -3,6 +3,7 @@ package cypherx
 import (
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
@@ -11,7 +12,7 @@ type DB struct {
 	driver neo4j.Driver
 }
 
-type Configurer func(*neo4j.TransactionConfig)
+type Configurer = func(*neo4j.TransactionConfig)
 
 var (
 	NotNodeTypeErr = errors.New("type neo4j.Node assertion failure, unexpected result type\n")
@@ -143,18 +144,69 @@ func (db *DB) GetNodes(
 		return NotValidPtrErr
 	}
 
-	session := db.driver.NewSession(neo4j.SessionConfig{})
-	defer session.Close()
+	rt := reflect.TypeOf(dest)
 
-	res, err := session.Run(cypher, params)
-	if err != nil {
-		return fmt.Errorf("cypher execution failure: %w\n", err)
+	if rt.Elem().Kind() != reflect.Slice ||
+		rt.Elem().Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("dest must be valid pointer to a slice of struct\n")
 	}
 
 	m := mapper{}
-	if err := m.scanAll(dest, res); err != nil {
-		return fmt.Errorf("fail to map all nodes to dest: %w\n", err)
+	structType := rt.Elem().Elem()
+	if err := m.analyzeStruct(structType); err != nil {
+		return err
 	}
 
-	return nil
+	resChan := make(chan *neo4j.Record)
+	errChan := make(chan error)
+
+	go db.fetchRecords(resChan, errChan, cypher, params, configurers...)
+
+	slicePtr := reflect.ValueOf(dest)
+	for res := range resChan {
+		node, ok := res.GetByIndex(0).(neo4j.Node)
+		if !ok {
+			return NotNodeTypeErr
+		}
+
+		st := reflect.New(structType)
+		props := node.Props
+		if err := m.scanProps(st, props); err != nil {
+			return fmt.Errorf("scan props failed: %w", err)
+		}
+
+		slicePtr.Elem().Set(reflect.Append(slicePtr.Elem(), st.Elem()))
+	}
+
+	select {
+	case err := <-errChan:
+		return err
+	default:
+		return nil
+	}
+}
+
+func (db *DB) fetchRecords(
+	resChan chan *neo4j.Record,
+	errChan chan error,
+	cypher string,
+	params map[string]interface{},
+	configurers ...Configurer,
+) {
+	session := db.driver.NewSession(neo4j.SessionConfig{})
+	defer session.Close()
+
+	res, err := session.Run(cypher, params, configurers...)
+	if err != nil {
+		close(resChan)
+		errChan <- err
+		return
+	}
+
+	var record *neo4j.Record
+	for res.NextRecord(&record) {
+		resChan <- record
+	}
+	close(resChan)
+	close(errChan)
 }

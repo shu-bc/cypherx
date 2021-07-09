@@ -25,6 +25,23 @@ var _scannerIt = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 
 var UnsettableValueErr = errors.New("unsettable reflect value\n")
 
+func (m *mapper) scanProps(stPtr reflect.Value, props map[string]interface{}) error {
+	for i, name := range m.propNames {
+		pv, ok := props[name]
+		if !ok {
+			continue
+		}
+
+		field := stPtr.Elem().Field(i)
+		assignFuc := m.assignFuncs[i]
+		if err := assignFuc(field, pv); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *mapper) scan(dest interface{}, props map[string]interface{}) error {
 	rt := reflect.TypeOf(dest)
 
