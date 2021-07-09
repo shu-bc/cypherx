@@ -68,6 +68,7 @@ func (db *DB) RawResult(cypher string, params map[string]interface{}) (interface
 	return result, nil
 }
 
+//GetValues fetch records from neo4j db and assign values of each record to a struct
 func (db *DB) GetValues(dest interface{}, cypher string, params map[string]interface{}) error {
 	if !isValidPtr(dest) {
 		return NotValidPtrErr
@@ -83,7 +84,7 @@ func (db *DB) GetValues(dest interface{}, cypher string, params map[string]inter
 
 	m := mapper{}
 	if err := m.scanValues(dest, res); err != nil {
-		return fmt.Errorf("fail to map all values to dest: %w\n", err)
+		return fmt.Errorf("fail to map values to dest: %w\n", err)
 	}
 
 	return nil
