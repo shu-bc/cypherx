@@ -65,3 +65,31 @@ func TestGetNodes(t *testing.T) {
 
 	fmt.Println(ps)
 }
+
+func TestGetValues(t *testing.T) {
+	db := &DB{}
+	if err := db.Connect("bolt://neo4j", "", ""); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := db.ExecQuery("match (p:Person{name: 'GetValues'}) delete p", nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.ExecQuery("merge (:Person{name: 'GetValues', age: 30,  salary: 1000.1, social_id: '123abc'})", nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.ExecQuery("merge (:Person{name: 'GetValues', age: 25,  salary: 1200.1, social_id: 'abc123'})", nil); err != nil {
+		t.Fatal(err)
+	}
+
+	resStruct := []struct {
+		A int
+		B string
+	}{}
+
+	if err := db.GetValues(&resStruct, "match (p:Person{name :'GetValues'}) return p.age, p.name", nil); err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println(resStruct)
+}

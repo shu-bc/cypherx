@@ -48,6 +48,35 @@ func (m *mapper) scan(dest interface{}, props map[string]interface{}) error {
 	return nil
 }
 
+func (m *mapper) scanValues(dest interface{}, result neo4j.Result) error {
+	rt := reflect.TypeOf(dest)
+	if rt.Elem().Kind() != reflect.Slice ||
+		rt.Elem().Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("invalid type %s, expect slice struct kind\n", rt.Elem().String())
+	}
+
+	structType := rt.Elem().Elem()
+	if err := m.analyzeStruct(structType); err != nil {
+		return err
+	}
+
+	slicePtr := reflect.ValueOf(dest)
+	var record *neo4j.Record
+	for result.NextRecord(&record) {
+		newStruct := reflect.New(structType)
+		for i, v := range record.Values {
+			field := newStruct.Elem().Field(i)
+			assignFunc := m.assignFuncs[i]
+			if err := assignFunc(field, v); err != nil {
+				return err
+			}
+		}
+		slicePtr.Elem().Set(reflect.Append(slicePtr.Elem(), newStruct.Elem()))
+	}
+
+	return nil
+}
+
 func (m *mapper) scanAll(dest interface{}, result neo4j.Result) error {
 	rt := reflect.TypeOf(dest)
 

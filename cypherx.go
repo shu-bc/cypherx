@@ -68,7 +68,24 @@ func (db *DB) RawResult(cypher string, params map[string]interface{}) (interface
 	return result, nil
 }
 
-func (db *DB) QueryAny(dest interface{}, params map[string]interface{}) error {
+func (db *DB) GetValues(dest interface{}, cypher string, params map[string]interface{}) error {
+	if !isValidPtr(dest) {
+		return NotValidPtrErr
+	}
+
+	session := db.driver.NewSession(neo4j.SessionConfig{})
+	defer session.Close()
+
+	res, err := session.Run(cypher, params)
+	if err != nil {
+		return fmt.Errorf("cypher execution failure: %w\n", err)
+	}
+
+	m := mapper{}
+	if err := m.scanValues(dest, res); err != nil {
+		return fmt.Errorf("fail to map all values to dest: %w\n", err)
+	}
+
 	return nil
 }
 
