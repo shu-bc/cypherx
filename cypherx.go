@@ -154,7 +154,7 @@ func (db *DB) GetNodes(
 	m := mapper{}
 	structType := rt.Elem().Elem()
 	if err := m.analyzeStruct(structType); err != nil {
-		return err
+		return fmt.Errorf("failed to analyze struct type: %w", err)
 	}
 
 	resChan := make(chan *neo4j.Record)

@@ -2,7 +2,6 @@ package cypherx
 
 import (
 	"database/sql"
-	"fmt"
 	"testing"
 	"time"
 
@@ -66,7 +65,7 @@ func TestGetNodes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fmt.Println(ps)
+	//fmt.Println(ps)
 }
 
 func TestGetMultiValueRecords(t *testing.T) {
@@ -94,5 +93,5 @@ func TestGetMultiValueRecords(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fmt.Println(resStruct)
+	//fmt.Println(resStruct)
 }
