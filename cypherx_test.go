@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -23,7 +24,7 @@ func TestGetNode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := db.ExecQuery("match (p:Person{name: 'peter'}) delete p", nil); err != nil {
+	if err := db.ExecQuery("match (p:Person{name: 'peter'}) delete p", nil, WithTxTimeout(2*time.Second)); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.ExecQuery("merge (:Person{name: 'peter', age: 30,  salary: 1000.1, social_id: '123abc'})", nil); err != nil {
@@ -40,6 +41,7 @@ func TestGetNode(t *testing.T) {
 	assert.Equal(t, 1000.1, p.Salary)
 	assert.True(t, p.SocialID.Valid)
 	assert.Equal(t, "123abc", p.SocialID.String)
+	assert.Equal(t, "", p.p)
 }
 
 func TestGetNodes(t *testing.T) {

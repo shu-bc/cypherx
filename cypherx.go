@@ -11,9 +11,14 @@ type DB struct {
 	driver neo4j.Driver
 }
 
+type Configurer func(*neo4j.TransactionConfig)
+
 var (
 	NotNodeTypeErr = errors.New("type neo4j.Node assertion failure, unexpected result type\n")
 	NotValidPtrErr = errors.New("dest must be a non-null pointer\n")
+
+	WithTxMetadata = neo4j.WithTxMetadata
+	WithTxTimeout  = neo4j.WithTxTimeout
 )
 
 func NewDB(driver neo4j.Driver) *DB {
@@ -39,7 +44,7 @@ func (db *DB) Connect(host, user, pass string) error {
 	return nil
 }
 
-func (db *DB) ExecQuery(cypher string, params map[string]interface{}) error {
+func (db *DB) ExecQuery(cypher string, params map[string]interface{}, configurers ...Configurer) error {
 	session := db.driver.NewSession(neo4j.SessionConfig{})
 	defer session.Close()
 
@@ -51,7 +56,7 @@ func (db *DB) ExecQuery(cypher string, params map[string]interface{}) error {
 	return nil
 }
 
-func (db *DB) RawResult(cypher string, params map[string]interface{}) (interface{}, error) {
+func (db *DB) RawResult(cypher string, params map[string]interface{}, configurers ...Configurer) (interface{}, error) {
 	session := db.driver.NewSession(neo4j.SessionConfig{})
 	defer session.Close()
 
@@ -69,7 +74,7 @@ func (db *DB) RawResult(cypher string, params map[string]interface{}) (interface
 }
 
 //GetMultiValueRecords fetch records from neo4j db and assign values of each record to a struct
-func (db *DB) GetMultiValueRecords(dest interface{}, cypher string, params map[string]interface{}) error {
+func (db *DB) GetMultiValueRecords(dest interface{}, cypher string, params map[string]interface{}, configurers ...Configurer) error {
 	if !isValidPtr(dest) {
 		return NotValidPtrErr
 	}
@@ -94,6 +99,7 @@ func (db *DB) GetNode(
 	dest interface{},
 	cypher string,
 	params map[string]interface{},
+	configurers ...Configurer,
 ) error {
 	if !isValidPtr(dest) {
 		return NotValidPtrErr
@@ -131,6 +137,7 @@ func (db *DB) GetNodes(
 	dest interface{},
 	cypher string,
 	params map[string]interface{},
+	configurers ...Configurer,
 ) error {
 	if !isValidPtr(dest) {
 		return NotValidPtrErr
@@ -151,29 +158,3 @@ func (db *DB) GetNodes(
 
 	return nil
 }
-
-func (db *DB) handleQuery(
-	dest interface{},
-	cypher string,
-	params map[string]interface{},
-	handleResult func(result neo4j.Result, dest interface{}) error,
-) error {
-	session := db.driver.NewSession(neo4j.SessionConfig{})
-	defer session.Close()
-
-	res, err := session.Run(cypher, params)
-	if err != nil {
-		return err
-	}
-
-	// do nothing when dest is nil
-	if dest == nil {
-		return nil
-	}
-
-	handleResult(res, dest)
-
-	return nil
-}
-
-type TransactionConfig neo4j.TransactionConfig
