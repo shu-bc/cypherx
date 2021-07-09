@@ -68,8 +68,8 @@ func (db *DB) RawResult(cypher string, params map[string]interface{}) (interface
 	return result, nil
 }
 
-//GetValues fetch records from neo4j db and assign values of each record to a struct
-func (db *DB) GetValues(dest interface{}, cypher string, params map[string]interface{}) error {
+//GetMultiValueRecords fetch records from neo4j db and assign values of each record to a struct
+func (db *DB) GetMultiValueRecords(dest interface{}, cypher string, params map[string]interface{}) error {
 	if !isValidPtr(dest) {
 		return NotValidPtrErr
 	}

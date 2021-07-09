@@ -66,7 +66,7 @@ func TestGetNodes(t *testing.T) {
 	fmt.Println(ps)
 }
 
-func TestGetValues(t *testing.T) {
+func TestGetMultiValueRecords(t *testing.T) {
 	db := &DB{}
 	if err := db.Connect("bolt://neo4j", "", ""); err != nil {
 		t.Fatal(err)
@@ -87,7 +87,7 @@ func TestGetValues(t *testing.T) {
 		B string
 	}{}
 
-	if err := db.GetValues(&resStruct, "match (p:Person{name :'GetValues'}) return p.age, p.name", nil); err != nil {
+	if err := db.GetMultiValueRecords(&resStruct, "match (p:Person{name :'GetValues'}) return p.age, p.name", nil); err != nil {
 		t.Fatal(err)
 	}
 
