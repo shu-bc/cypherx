@@ -14,7 +14,7 @@ import (
 
 type assignmentFunc func(f reflect.Value, v interface{}) error
 
-var publicFieldReg = regexp.MustCompile(`^[A-Z]+`)
+var publicFieldPattern = regexp.MustCompile(`^[A-Z]+`)
 var _scannerIt = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 var UnsettableValueErr = errors.New("unsettable reflect value\n")
 
@@ -70,7 +70,7 @@ func (m *mapper) analyzeStruct(t reflect.Type) error {
 	for i := 0; i < t.NumField(); i++ {
 		tf := t.Field(i)
 		// ignore private field
-		if !publicFieldReg.MatchString(tf.Name) {
+		if !publicFieldPattern.MatchString(tf.Name) {
 			continue
 		}
 
