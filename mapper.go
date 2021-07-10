@@ -158,7 +158,7 @@ func generateAssignmentFunc(rt reflect.Type) (assignmentFunc, error) {
 				return nil
 			}
 
-			return fmt.Errorf("unexpected value type %T, expect int, int64", v)
+			return fmt.Errorf("unexpected value type %T, expect int64", v)
 		}, nil
 
 	// TODO: float32 の対応の必要か？
