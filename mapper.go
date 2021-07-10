@@ -123,103 +123,116 @@ func isValidPtr(i interface{}) bool {
 func generateAssignmentFunc(rt reflect.Type) (assignmentFunc, error) {
 	vfPtr := reflect.PtrTo(rt)
 	if vfPtr.Implements(_scannerIt) {
-		return func(f reflect.Value, v interface{}) error {
-			ptr := f.Addr()
-			ptr.MethodByName("Scan").Call([]reflect.Value{reflect.ValueOf(v)})
-
-			return nil
-		}, nil
+		return assignValueToScanner, nil
 	}
 
 	switch rt.Kind() {
 	case reflect.String:
-		return func(f reflect.Value, v interface{}) error {
-			if !f.CanSet() {
-				return UnsettableValueErr
-			}
-
-			if s, ok := v.(string); ok {
-				f.SetString(s)
-				return nil
-			}
-
-			return fmt.Errorf("unexpected value type %T, expect string\n", v)
-		}, nil
+		return assignStringValueToField, nil
 
 	// TODO: その他のint型の対応
 	case reflect.Int, reflect.Int64:
-		return func(f reflect.Value, v interface{}) error {
-			if !f.CanSet() {
-				return UnsettableValueErr
-			}
-
-			// neo4j の整数の型は int64 のみ
-			if v, ok := v.(int64); ok {
-				f.SetInt(v)
-				return nil
-			}
-
-			return fmt.Errorf("unexpected value type %T, expect int64", v)
-		}, nil
+		return assignIntValueToField, nil
 
 	// TODO: float32 の対応の必要か？
 	case reflect.Float64:
-		return func(f reflect.Value, v interface{}) error {
-			if !f.CanSet() {
-				return UnsettableValueErr
-			}
-
-			if v, ok := v.(float64); ok {
-				f.SetFloat(v)
-				return nil
-			}
-
-			return fmt.Errorf("unexpected value type %T, expect float64\n", v)
-		}, nil
+		return assignFloat64ValueToField, nil
 
 	case reflect.Bool:
-		return func(f reflect.Value, v interface{}) error {
-			if !f.CanSet() {
-				return UnsettableValueErr
-			}
-
-			if v, ok := v.(bool); ok {
-				f.SetBool(v)
-				return nil
-			}
-
-			return fmt.Errorf("unexpected value type %T, expect bool\n", v)
-		}, nil
+		return assignBoolValueToField, nil
 
 	case reflect.Struct:
-		return func(f reflect.Value, v interface{}) error {
-			if !f.CanSet() {
-				return UnsettableValueErr
-			}
-
-			node, ok := v.(neo4j.Node)
-			if !ok {
-				return NotNodeTypeErr
-			}
-
-			m, ok := typeMapperCache.mapping[f.Type()]
-			if !ok {
-				m = &mapper{}
-				if err := m.analyzeStruct(f.Type()); err != nil {
-					return fmt.Errorf("failed to analyze struct type %s: %w", f.Type().String(), err)
-				}
-
-				typeMapperCache.mu.Lock()
-				typeMapperCache.mapping[f.Type()] = m
-				typeMapperCache.mu.Unlock()
-			}
-
-			if err := m.scanProps(f.Addr(), node.Props); err != nil {
-				return fmt.Errorf("failed to scan props to struct: %w", err)
-			}
-			return nil
-		}, nil
+		return assignNodeToStructField, nil
 	}
 
 	return nil, fmt.Errorf("cannot generate assignment func for %s type", rt.String())
+}
+
+func assignValueToScanner(f reflect.Value, v interface{}) error {
+	ptr := f.Addr()
+	//TODO: handle error return
+	ptr.MethodByName("Scan").Call([]reflect.Value{reflect.ValueOf(v)})
+
+	return nil
+}
+
+func assignStringValueToField(f reflect.Value, v interface{}) error {
+	if !f.CanSet() {
+		return UnsettableValueErr
+	}
+
+	if s, ok := v.(string); ok {
+		f.SetString(s)
+		return nil
+	}
+
+	return fmt.Errorf("unexpected value type %T, expect string\n", v)
+}
+
+func assignIntValueToField(f reflect.Value, v interface{}) error {
+	if !f.CanSet() {
+		return UnsettableValueErr
+	}
+
+	// neo4j の整数の型は int64 のみ
+	if v, ok := v.(int64); ok {
+		f.SetInt(v)
+		return nil
+	}
+
+	return fmt.Errorf("unexpected value type %T, expect int64", v)
+}
+
+func assignFloat64ValueToField(f reflect.Value, v interface{}) error {
+	if !f.CanSet() {
+		return UnsettableValueErr
+	}
+
+	if v, ok := v.(float64); ok {
+		f.SetFloat(v)
+		return nil
+	}
+
+	return fmt.Errorf("unexpected value type %T, expect float64\n", v)
+}
+
+func assignBoolValueToField(f reflect.Value, v interface{}) error {
+	if !f.CanSet() {
+		return UnsettableValueErr
+	}
+
+	if v, ok := v.(bool); ok {
+		f.SetBool(v)
+		return nil
+	}
+
+	return fmt.Errorf("unexpected value type %T, expect bool\n", v)
+}
+
+func assignNodeToStructField(f reflect.Value, v interface{}) error {
+	if !f.CanSet() {
+		return UnsettableValueErr
+	}
+
+	node, ok := v.(neo4j.Node)
+	if !ok {
+		return NotNodeTypeErr
+	}
+
+	m, ok := typeMapperCache.mapping[f.Type()]
+	if !ok {
+		m = &mapper{}
+		if err := m.analyzeStruct(f.Type()); err != nil {
+			return fmt.Errorf("failed to analyze struct type %s: %w", f.Type().String(), err)
+		}
+
+		typeMapperCache.mu.Lock()
+		typeMapperCache.mapping[f.Type()] = m
+		typeMapperCache.mu.Unlock()
+	}
+
+	if err := m.scanProps(f.Addr(), node.Props); err != nil {
+		return fmt.Errorf("failed to scan props to struct: %w", err)
+	}
+	return nil
 }
