@@ -52,7 +52,7 @@ func (db *DB) ExecQuery(cypher string,
 	session := db.driver.NewSession(neo4j.SessionConfig{})
 	defer session.Close()
 
-	_, err := session.Run(cypher, params)
+	_, err := session.Run(cypher, params, configurers...)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (db *DB) RawResult(cypher string,
 	session := db.driver.NewSession(neo4j.SessionConfig{})
 	defer session.Close()
 
-	res, err := session.Run(cypher, params)
+	res, err := session.Run(cypher, params, configurers...)
 	if err != nil {
 		return nil, err
 	}
