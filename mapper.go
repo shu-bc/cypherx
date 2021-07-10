@@ -7,16 +7,26 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/ettle/strcase"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
 
-type assignmentFunc func(f reflect.Value, v interface{}) error
-
 var publicFieldPattern = regexp.MustCompile(`^[A-Z]+`)
 var _scannerIt = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 var UnsettableValueErr = errors.New("unsettable reflect value\n")
+
+type assignmentFunc func(f reflect.Value, v interface{}) error
+
+type typeMapper struct {
+	mapping map[reflect.Type]*mapper
+	mu      sync.Mutex
+}
+
+var typeMapperCache = typeMapper{
+	mapping: map[reflect.Type]*mapper{},
+}
 
 type mapper struct {
 	assignFuncs []assignmentFunc
@@ -61,6 +71,12 @@ func (m *mapper) analyzeStruct(t reflect.Type) error {
 		return fmt.Errorf("invalid type %s, expected struct\n", t.Kind().String())
 	}
 
+	if c, ok := typeMapperCache.mapping[t]; ok {
+		m.assignFuncs = c.assignFuncs
+		m.propNames = c.propNames
+		return nil
+	}
+
 	if t.NumField() == 0 {
 		return fmt.Errorf("struct must have > 1 field\n")
 	}
@@ -89,6 +105,10 @@ func (m *mapper) analyzeStruct(t reflect.Type) error {
 
 	m.assignFuncs = funcs
 	m.propNames = names
+
+	typeMapperCache.mu.Lock()
+	typeMapperCache.mapping[t] = m
+	typeMapperCache.mu.Unlock()
 
 	return nil
 }
@@ -138,7 +158,7 @@ func generateAssignmentFunc(rt reflect.Type) (assignmentFunc, error) {
 				return nil
 			}
 
-			return fmt.Errorf("unexpected value type %T, expect int, int64\n", v)
+			return fmt.Errorf("unexpected value type %T, expect int, int64", v)
 		}, nil
 
 	// TODO: float32 の対応の必要か？
@@ -168,6 +188,35 @@ func generateAssignmentFunc(rt reflect.Type) (assignmentFunc, error) {
 			}
 
 			return fmt.Errorf("unexpected value type %T, expect bool\n", v)
+		}, nil
+
+	case reflect.Struct:
+		return func(f reflect.Value, v interface{}) error {
+			if !f.CanSet() {
+				return UnsettableValueErr
+			}
+
+			node, ok := v.(neo4j.Node)
+			if !ok {
+				return NotNodeTypeErr
+			}
+
+			m, ok := typeMapperCache.mapping[f.Type()]
+			if !ok {
+				m = &mapper{}
+				if err := m.analyzeStruct(f.Type()); err != nil {
+					return fmt.Errorf("failed to analyze struct type %s: %w", f.Type().String(), err)
+				}
+
+				typeMapperCache.mu.Lock()
+				typeMapperCache.mapping[f.Type()] = m
+				typeMapperCache.mu.Unlock()
+			}
+
+			if err := m.scanProps(f.Addr(), node.Props); err != nil {
+				return fmt.Errorf("failed to scan props to struct: %w", err)
+			}
+			return nil
 		}, nil
 	}
 

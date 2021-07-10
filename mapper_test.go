@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/neo4j/neo4j-go-driver/v4/neo4j/dbtype"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,6 +25,10 @@ func TestGenerateAssignmentFunc(t *testing.T) {
 		Age         int
 		Height      float64
 		Alive       bool
+		Relative    struct {
+			Name string
+			Age  int
+		}
 	}{}
 
 	// Name
@@ -88,4 +93,28 @@ func TestGenerateAssignmentFunc(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.True(t, s.Alive)
+
+	// Relative
+	fv = reflect.ValueOf(s).Elem().Field(5)
+	f, err = generateAssignmentFunc(fv.Type())
+	if err != nil {
+		t.Fatal(err)
+	}
+	node := dbtype.Node{
+		Props: map[string]interface{}{
+			"name": "relative",
+			"age":  int64(12),
+		},
+	}
+	if err := f(fv, node); err != nil {
+		t.Fatal(err)
+	}
+	expect := struct {
+		Name string
+		Age  int
+	}{
+		Name: "relative",
+		Age:  12,
+	}
+	assert.Equal(t, expect, s.Relative)
 }
