@@ -12,18 +12,16 @@ import (
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
 
+type assignmentFunc func(f reflect.Value, v interface{}) error
+
+var publicFieldReg = regexp.MustCompile(`^[A-Z]+`)
+var _scannerIt = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
+var UnsettableValueErr = errors.New("unsettable reflect value\n")
+
 type mapper struct {
 	assignFuncs []assignmentFunc
 	propNames   []string
 }
-
-var publicFieldReg = regexp.MustCompile(`^[A-Z]+`)
-
-type assignmentFunc func(f reflect.Value, v interface{}) error
-
-var _scannerIt = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
-
-var UnsettableValueErr = errors.New("unsettable reflect value\n")
 
 func (m *mapper) scanProps(stPtr reflect.Value, props map[string]interface{}) error {
 	for i, name := range m.propNames {
@@ -100,7 +98,6 @@ func isValidPtr(i interface{}) bool {
 	return rv.Kind() == reflect.Ptr && !rv.IsNil()
 }
 
-// TODO: ポインタータイプの対応
 // reflect.Kind に対する、interface{} 値を代入する操作をする関数を生成する
 func generateAssignmentFunc(rt reflect.Type) (assignmentFunc, error) {
 	vfPtr := reflect.PtrTo(rt)
