@@ -45,7 +45,10 @@ func (db *DB) Connect(host, user, pass string) error {
 	return nil
 }
 
-func (db *DB) ExecQuery(cypher string, params map[string]interface{}, configurers ...Configurer) error {
+func (db *DB) ExecQuery(cypher string,
+	params map[string]interface{},
+	configurers ...Configurer,
+) error {
 	session := db.driver.NewSession(neo4j.SessionConfig{})
 	defer session.Close()
 
@@ -57,7 +60,10 @@ func (db *DB) ExecQuery(cypher string, params map[string]interface{}, configurer
 	return nil
 }
 
-func (db *DB) RawResult(cypher string, params map[string]interface{}, configurers ...Configurer) (interface{}, error) {
+func (db *DB) RawResult(cypher string,
+	params map[string]interface{},
+	configurers ...Configurer,
+) (interface{}, error) {
 	session := db.driver.NewSession(neo4j.SessionConfig{})
 	defer session.Close()
 
@@ -75,7 +81,11 @@ func (db *DB) RawResult(cypher string, params map[string]interface{}, configurer
 }
 
 //GetMultiValueRecords fetch records from neo4j db and assign values of each record to a struct
-func (db *DB) GetMultiValueRecords(dest interface{}, cypher string, params map[string]interface{}, configurers ...Configurer) error {
+func (db *DB) GetMultiValueRecords(dest interface{},
+	cypher string,
+	params map[string]interface{},
+	configurers ...Configurer,
+) error {
 	if !isValidPtr(dest) {
 		return NotValidPtrErr
 	}
