@@ -24,6 +24,7 @@ type typeMapper struct {
 	mu      sync.Mutex
 }
 
+// cache mapper for struct type that has been analyzed
 var typeMapperCache = typeMapper{
 	mapping: map[reflect.Type]*mapper{},
 }
