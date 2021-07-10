@@ -106,29 +106,36 @@ func (db *DB) GetNode(
 		return NotValidPtrErr
 	}
 
-	session := db.driver.NewSession(neo4j.SessionConfig{})
-	defer session.Close()
-
-	res, err := session.Run(cypher, params)
-	if err != nil {
-		return fmt.Errorf("cypher execution failure: %w\n", err)
-	}
-
-	var record *neo4j.Record
-	record, err = res.Single()
-	if err != nil {
-		return fmt.Errorf("result must contain only one record: %w\n", err)
-	}
-
-	node, ok := record.GetByIndex(0).(neo4j.Node)
-	if !ok {
-		return NotNodeTypeErr
+	rt := reflect.TypeOf(dest)
+	if rt.Elem().Kind() != reflect.Struct {
+		return errors.New("dest must be a pointer to struct\n")
 	}
 
 	m := mapper{}
-	err = m.scan(dest, node.Props)
-	if err != nil {
-		return fmt.Errorf("fail to assign props to dest: %w\n", err)
+	structType := rt.Elem()
+
+	if err := m.analyzeStruct(structType); err != nil {
+		return fmt.Errorf("failed to analyze struct type: %w", err)
+	}
+
+	resChan := make(chan *neo4j.Record)
+	errChan := make(chan error)
+
+	go db.fetchRecord(resChan, errChan, cypher, params, configurers...)
+
+	structPtr := reflect.ValueOf(dest)
+	select {
+	case res := <-resChan:
+		node, ok := res.GetByIndex(0).(neo4j.Node)
+		if !ok {
+			return NotNodeTypeErr
+		}
+
+		if err := m.scanProps(structPtr, node.Props); err != nil {
+			return fmt.Errorf("scan props failed: %w", err)
+		}
+	case err := <-errChan:
+		return err
 	}
 
 	return nil
@@ -207,6 +214,36 @@ func (db *DB) fetchRecords(
 	for res.NextRecord(&record) {
 		resChan <- record
 	}
+	close(resChan)
+	close(errChan)
+}
+
+func (db *DB) fetchRecord(
+	resChan chan *neo4j.Record,
+	errChan chan error,
+	cypher string,
+	params map[string]interface{},
+	configurers ...Configurer,
+) {
+	session := db.driver.NewSession(neo4j.SessionConfig{})
+	defer session.Close()
+
+	res, err := session.Run(cypher, params, configurers...)
+	if err != nil {
+		close(resChan)
+		errChan <- err
+		return
+	}
+
+	record, err := res.Single()
+	if err != nil {
+		close(resChan)
+		errChan <- err
+		return
+	}
+
+	resChan <- record
+
 	close(resChan)
 	close(errChan)
 }
