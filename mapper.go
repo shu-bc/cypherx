@@ -15,7 +15,7 @@ import (
 
 var publicFieldPattern = regexp.MustCompile(`^[A-Z]+`)
 var _scannerIt = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
-var UnsettableValueErr = errors.New("unsettable reflect value\n")
+var UnsettableValueErr = errors.New("unsettable reflect value")
 
 type assignmentFunc func(f reflect.Value, v interface{}) error
 
@@ -69,7 +69,7 @@ func (m *mapper) analyzeStruct(t reflect.Type) error {
 	}
 
 	if t.Kind() != reflect.Struct {
-		return fmt.Errorf("invalid type %s, expected struct\n", t.Kind().String())
+		return fmt.Errorf("invalid type %s, expected struct", t.Kind().String())
 	}
 
 	if c, ok := typeMapperCache.mapping[t]; ok {
@@ -79,7 +79,7 @@ func (m *mapper) analyzeStruct(t reflect.Type) error {
 	}
 
 	if t.NumField() == 0 {
-		return fmt.Errorf("struct must have > 1 field\n")
+		return fmt.Errorf("struct must have > 1 field")
 	}
 
 	names := make([]string, 0, t.NumField())
@@ -119,7 +119,7 @@ func isValidPtr(i interface{}) bool {
 	return rv.Kind() == reflect.Ptr && !rv.IsNil()
 }
 
-// reflect.Kind に対する、interface{} 値を代入する操作をする関数を生成する
+//generate func for each field type, including struct type
 func generateAssignmentFunc(rt reflect.Type) (assignmentFunc, error) {
 	vfPtr := reflect.PtrTo(rt)
 	if vfPtr.Implements(_scannerIt) {
@@ -166,7 +166,7 @@ func assignStringValueToField(f reflect.Value, v interface{}) error {
 		return nil
 	}
 
-	return fmt.Errorf("unexpected value type %T, expect string\n", v)
+	return fmt.Errorf("unexpected value type %T, expect string", v)
 }
 
 func assignIntValueToField(f reflect.Value, v interface{}) error {
@@ -193,7 +193,7 @@ func assignFloat64ValueToField(f reflect.Value, v interface{}) error {
 		return nil
 	}
 
-	return fmt.Errorf("unexpected value type %T, expect float64\n", v)
+	return fmt.Errorf("unexpected value type %T, expect float64", v)
 }
 
 func assignBoolValueToField(f reflect.Value, v interface{}) error {
@@ -206,7 +206,7 @@ func assignBoolValueToField(f reflect.Value, v interface{}) error {
 		return nil
 	}
 
-	return fmt.Errorf("unexpected value type %T, expect bool\n", v)
+	return fmt.Errorf("unexpected value type %T, expect bool", v)
 }
 
 func assignNodeToStructField(f reflect.Value, v interface{}) error {

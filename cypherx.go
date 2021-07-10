@@ -15,8 +15,8 @@ type DB struct {
 type Configurer = func(*neo4j.TransactionConfig)
 
 var (
-	NotNodeTypeErr = errors.New("type neo4j.Node assertion failure, unexpected result type\n")
-	NotValidPtrErr = errors.New("dest must be a non-null pointer\n")
+	NotNodeTypeErr = errors.New("type neo4j.Node assertion failure, unexpected result type")
+	NotValidPtrErr = errors.New("dest must be a non-null pointer")
 
 	WithTxMetadata = neo4j.WithTxMetadata
 	WithTxTimeout  = neo4j.WithTxTimeout
@@ -93,7 +93,7 @@ func (db *DB) GetMultiValueRecords(dest interface{},
 	rt := reflect.TypeOf(dest)
 	if rt.Elem().Kind() != reflect.Slice ||
 		rt.Elem().Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("invalid type %s, expect slice struct kind\n", rt.Elem().String())
+		return fmt.Errorf("invalid type %s, expect slice struct kind", rt.Elem().String())
 	}
 
 	m := &mapper{}
@@ -137,7 +137,7 @@ func (db *DB) GetNode(
 
 	rt := reflect.TypeOf(dest)
 	if rt.Elem().Kind() != reflect.Struct {
-		return errors.New("dest must be a pointer to struct\n")
+		return errors.New("dest must be a pointer to struct")
 	}
 
 	m := &mapper{}
@@ -184,7 +184,7 @@ func (db *DB) GetNodes(
 
 	if rt.Elem().Kind() != reflect.Slice ||
 		rt.Elem().Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("dest must be valid pointer to a slice of struct\n")
+		return fmt.Errorf("dest must be valid pointer to a slice of struct")
 	}
 
 	m := &mapper{}
