@@ -93,7 +93,7 @@ func (db *DB) GetMultiValueRecords(dest interface{},
 	rt := reflect.TypeOf(dest)
 	if rt.Elem().Kind() != reflect.Slice ||
 		rt.Elem().Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("invalid type %s, expect slice struct kind", rt.Elem().String())
+		return fmt.Errorf("invalid destination variable type %s, expect slice struct kind", rt.Elem().String())
 	}
 
 	m := &mapper{}
@@ -184,7 +184,7 @@ func (db *DB) GetNodes(
 
 	if rt.Elem().Kind() != reflect.Slice ||
 		rt.Elem().Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("dest must be valid pointer to a slice of struct")
+		return fmt.Errorf("invalid destination variable type %s, expect slice struct kind", rt.Elem().String())
 	}
 
 	m := &mapper{}

@@ -34,14 +34,14 @@ type mapper struct {
 	propNames   []string
 }
 
-func (m *mapper) scanProps(stPtr reflect.Value, props map[string]interface{}) error {
+func (m *mapper) scanProps(structPtr reflect.Value, props map[string]interface{}) error {
 	for i, name := range m.propNames {
 		pv, ok := props[name]
 		if !ok {
 			continue
 		}
 
-		field := stPtr.Elem().Field(i)
+		field := structPtr.Elem().Field(i)
 		assignFuc := m.assignFuncs[i]
 		if err := assignFuc(field, pv); err != nil {
 			return err
