@@ -42,105 +42,13 @@ func (m *mapper) scanProps(stPtr reflect.Value, props map[string]interface{}) er
 	return nil
 }
 
-func (m *mapper) scan(dest interface{}, props map[string]interface{}) error {
-	rt := reflect.TypeOf(dest)
-
-	if !isValidPtr(dest) || rt.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("dest must be a pointer to struct\n")
-	}
-
-	if err := m.analyzeStruct(rt); err != nil {
-		return err
-	}
-
-	for i, p := range m.propNames {
-		pv, ok := props[p]
-		if !ok {
-			continue
-		}
-
-		rv := reflect.ValueOf(dest).Elem()
-		field := rv.Field(i)
-
-		assign := m.assignFuncs[i]
-		if err := assign(field, pv); err != nil {
+func (m *mapper) scanValues(structPtr reflect.Value, record *neo4j.Record) error {
+	for i, v := range record.Values {
+		field := structPtr.Elem().Field(i)
+		assignFunc := m.assignFuncs[i]
+		if err := assignFunc(field, v); err != nil {
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (m *mapper) scanValues(dest interface{}, result neo4j.Result) error {
-	rt := reflect.TypeOf(dest)
-	if rt.Elem().Kind() != reflect.Slice ||
-		rt.Elem().Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("invalid type %s, expect slice struct kind\n", rt.Elem().String())
-	}
-
-	structType := rt.Elem().Elem()
-	if err := m.analyzeStruct(structType); err != nil {
-		return err
-	}
-
-	slicePtr := reflect.ValueOf(dest)
-	var record *neo4j.Record
-	for result.NextRecord(&record) {
-		newStruct := reflect.New(structType)
-		for i, v := range record.Values {
-			field := newStruct.Elem().Field(i)
-			assignFunc := m.assignFuncs[i]
-			if err := assignFunc(field, v); err != nil {
-				return err
-			}
-		}
-		slicePtr.Elem().Set(reflect.Append(slicePtr.Elem(), newStruct.Elem()))
-	}
-
-	return nil
-}
-
-func (m *mapper) scanAll(dest interface{}, result neo4j.Result) error {
-	rt := reflect.TypeOf(dest)
-
-	if !isValidPtr(rt) ||
-		rt.Elem().Kind() != reflect.Slice ||
-		rt.Elem().Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("dest must be valid pointer to a slice of struct\n")
-	}
-
-	structType := rt.Elem().Elem()
-	if err := m.analyzeStruct(structType); err != nil {
-		return err
-	}
-
-	rv := reflect.ValueOf(dest)
-
-	var record *neo4j.Record
-	for result.NextRecord(&record) {
-		v := record.GetByIndex(0)
-		node, ok := v.(neo4j.Node)
-		if !ok {
-			return NotNodeTypeErr
-		}
-
-		// st はポインターになる
-		st := reflect.New(structType)
-		props := node.Props
-		for i, p := range m.propNames {
-			pv, ok := props[p]
-			if !ok {
-				continue
-			}
-
-			field := st.Elem().Field(i)
-
-			assign := m.assignFuncs[i]
-			if err := assign(field, pv); err != nil {
-				return err
-			}
-		}
-		rv.Elem().Set(reflect.Append(rv.Elem(), st.Elem()))
 	}
 
 	return nil

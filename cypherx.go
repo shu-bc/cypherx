@@ -80,20 +80,39 @@ func (db *DB) GetMultiValueRecords(dest interface{}, cypher string, params map[s
 		return NotValidPtrErr
 	}
 
-	session := db.driver.NewSession(neo4j.SessionConfig{})
-	defer session.Close()
-
-	res, err := session.Run(cypher, params)
-	if err != nil {
-		return fmt.Errorf("cypher execution failure: %w\n", err)
+	rt := reflect.TypeOf(dest)
+	if rt.Elem().Kind() != reflect.Slice ||
+		rt.Elem().Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("invalid type %s, expect slice struct kind\n", rt.Elem().String())
 	}
 
-	m := mapper{}
-	if err := m.scanValues(dest, res); err != nil {
-		return fmt.Errorf("fail to map values to dest: %w\n", err)
+	m := &mapper{}
+	structType := rt.Elem().Elem()
+	if err := m.analyzeStruct(structType); err != nil {
+		return err
 	}
 
-	return nil
+	resChan := make(chan *neo4j.Record)
+	errChan := make(chan error)
+
+	go db.fetchRecords(resChan, errChan, cypher, params, configurers...)
+
+	slicePtr := reflect.ValueOf(dest)
+	for res := range resChan {
+		st := reflect.New(structType)
+		if err := m.scanValues(st, res); err != nil {
+			return fmt.Errorf("scan values failed: %w", err)
+		}
+
+		slicePtr.Elem().Set(reflect.Append(slicePtr.Elem(), st.Elem()))
+	}
+
+	select {
+	case err := <-errChan:
+		return err
+	default:
+		return nil
+	}
 }
 
 func (db *DB) GetNode(
@@ -111,7 +130,7 @@ func (db *DB) GetNode(
 		return errors.New("dest must be a pointer to struct\n")
 	}
 
-	m := mapper{}
+	m := &mapper{}
 	structType := rt.Elem()
 
 	if err := m.analyzeStruct(structType); err != nil {
@@ -158,7 +177,7 @@ func (db *DB) GetNodes(
 		return fmt.Errorf("dest must be valid pointer to a slice of struct\n")
 	}
 
-	m := mapper{}
+	m := &mapper{}
 	structType := rt.Elem().Elem()
 	if err := m.analyzeStruct(structType); err != nil {
 		return fmt.Errorf("failed to analyze struct type: %w", err)
