@@ -15,8 +15,9 @@ type DB struct {
 type Configurer = func(*neo4j.TransactionConfig)
 
 var (
-	NotNodeTypeErr = errors.New("type neo4j.Node assertion failure, unexpected result type")
-	NotValidPtrErr = errors.New("destination variable must be a non-null pointer")
+	notNodeTypeErr     = errors.New("type neo4j.Node assertion failure, unexpected result type")
+	notValidPtrErr     = errors.New("destination variable must be a non-null pointer")
+	unsettableValueErr = errors.New("unsettable reflect value")
 
 	WithTxMetadata = neo4j.WithTxMetadata
 	WithTxTimeout  = neo4j.WithTxTimeout
@@ -81,13 +82,15 @@ func (db *DB) RawResult(cypher string,
 }
 
 //GetMultiValueRecords fetch records from neo4j db and assign values of each record to a struct
-func (db *DB) GetMultiValueRecords(dest interface{},
+//dest must be *[]struct{} type
+func (db *DB) GetMultiValueRecords(
+	dest interface{},
 	cypher string,
 	params map[string]interface{},
 	configurers ...Configurer,
 ) error {
 	if !isValidPtr(dest) {
-		return NotValidPtrErr
+		return notValidPtrErr
 	}
 
 	rt := reflect.TypeOf(dest)
@@ -132,7 +135,7 @@ func (db *DB) GetNode(
 	configurers ...Configurer,
 ) error {
 	if !isValidPtr(dest) {
-		return NotValidPtrErr
+		return notValidPtrErr
 	}
 
 	rt := reflect.TypeOf(dest)
@@ -157,7 +160,7 @@ func (db *DB) GetNode(
 	case res := <-resChan:
 		node, ok := res.GetByIndex(0).(neo4j.Node)
 		if !ok {
-			return NotNodeTypeErr
+			return notNodeTypeErr
 		}
 
 		if err := m.scanProps(structPtr, node.Props); err != nil {

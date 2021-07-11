@@ -2,7 +2,6 @@ package cypherx
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -15,7 +14,6 @@ import (
 
 var publicFieldPattern = regexp.MustCompile(`^[A-Z]+`)
 var _scannerIt = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
-var UnsettableValueErr = errors.New("unsettable reflect value")
 
 type assignmentFunc func(f reflect.Value, v interface{}) error
 
@@ -191,7 +189,7 @@ func assignValueToScanner(f reflect.Value, v interface{}) error {
 
 func assignStringValueToField(f reflect.Value, v interface{}) error {
 	if !f.CanSet() {
-		return UnsettableValueErr
+		return unsettableValueErr
 	}
 
 	if s, ok := v.(string); ok {
@@ -204,7 +202,7 @@ func assignStringValueToField(f reflect.Value, v interface{}) error {
 
 func assignIntValueToField(f reflect.Value, v interface{}) error {
 	if !f.CanSet() {
-		return UnsettableValueErr
+		return unsettableValueErr
 	}
 
 	// neo4j の整数の型は int64 のみ
@@ -218,7 +216,7 @@ func assignIntValueToField(f reflect.Value, v interface{}) error {
 
 func assignFloat64ValueToField(f reflect.Value, v interface{}) error {
 	if !f.CanSet() {
-		return UnsettableValueErr
+		return unsettableValueErr
 	}
 
 	if v, ok := v.(float64); ok {
@@ -231,7 +229,7 @@ func assignFloat64ValueToField(f reflect.Value, v interface{}) error {
 
 func assignBoolValueToField(f reflect.Value, v interface{}) error {
 	if !f.CanSet() {
-		return UnsettableValueErr
+		return unsettableValueErr
 	}
 
 	if v, ok := v.(bool); ok {
@@ -244,12 +242,12 @@ func assignBoolValueToField(f reflect.Value, v interface{}) error {
 
 func assignNodeToStructField(f reflect.Value, v interface{}) error {
 	if !f.CanSet() {
-		return UnsettableValueErr
+		return unsettableValueErr
 	}
 
 	node, ok := v.(neo4j.Node)
 	if !ok {
-		return NotNodeTypeErr
+		return notNodeTypeErr
 	}
 
 	m, ok := typeMapperCache.mapping[f.Type()]
@@ -272,7 +270,7 @@ func assignNodeToStructField(f reflect.Value, v interface{}) error {
 
 func assignSliceValueToField(f reflect.Value, v interface{}) error {
 	if !f.CanSet() {
-		return UnsettableValueErr
+		return unsettableValueErr
 	}
 
 	m, ok := typeMapperCache.mapping[f.Type()]
