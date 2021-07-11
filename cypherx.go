@@ -12,7 +12,7 @@ type DB struct {
 	driver neo4j.Driver
 }
 
-type Configurer = func(*neo4j.TransactionConfig)
+type configurer = func(*neo4j.TransactionConfig)
 
 var (
 	notNodeTypeErr     = errors.New("type neo4j.Node assertion failure, unexpected result type")
@@ -48,7 +48,7 @@ func (db *DB) Connect(host, user, pass string) error {
 
 func (db *DB) ExecQuery(cypher string,
 	params map[string]interface{},
-	configurers ...Configurer,
+	configurers ...configurer,
 ) error {
 	session := db.driver.NewSession(neo4j.SessionConfig{})
 	defer session.Close()
@@ -63,7 +63,7 @@ func (db *DB) ExecQuery(cypher string,
 
 func (db *DB) RawResult(cypher string,
 	params map[string]interface{},
-	configurers ...Configurer,
+	configurers ...configurer,
 ) (interface{}, error) {
 	session := db.driver.NewSession(neo4j.SessionConfig{})
 	defer session.Close()
@@ -87,7 +87,7 @@ func (db *DB) GetMultiValueRecords(
 	dest interface{},
 	cypher string,
 	params map[string]interface{},
-	configurers ...Configurer,
+	configurers ...configurer,
 ) error {
 	if !isValidPtr(dest) {
 		return notValidPtrErr
@@ -132,7 +132,7 @@ func (db *DB) GetNode(
 	dest interface{},
 	cypher string,
 	params map[string]interface{},
-	configurers ...Configurer,
+	configurers ...configurer,
 ) error {
 	if !isValidPtr(dest) {
 		return notValidPtrErr
@@ -178,7 +178,7 @@ func (db *DB) fetchRecords(
 	errChan chan error,
 	cypher string,
 	params map[string]interface{},
-	configurers ...Configurer,
+	configurers ...configurer,
 ) {
 	session := db.driver.NewSession(neo4j.SessionConfig{})
 	defer session.Close()
@@ -203,7 +203,7 @@ func (db *DB) fetchRecord(
 	errChan chan error,
 	cypher string,
 	params map[string]interface{},
-	configurers ...Configurer,
+	configurers ...configurer,
 ) {
 	session := db.driver.NewSession(neo4j.SessionConfig{})
 	defer session.Close()
