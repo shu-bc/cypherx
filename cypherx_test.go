@@ -44,31 +44,6 @@ func TestGetNode(t *testing.T) {
 	assert.Equal(t, "", p.p)
 }
 
-func TestGetNodes(t *testing.T) {
-	db := &DB{}
-	if err := db.Connect("bolt://neo4j", "", ""); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := db.ExecQuery("match (p:Person{name: 'GetNodesTest'}) delete p", nil); err != nil {
-		t.Fatal(err)
-	}
-	if err := db.ExecQuery("merge (:Person{name: 'GetNodesTest', age: 30,  salary: 1000.1, social_id: '123abc'})", nil); err != nil {
-		t.Fatal(err)
-	}
-	if err := db.ExecQuery("merge (:Person{name: 'GetNodesTest', age: 25,  salary: 1200.1, social_id: 'abc123'})", nil); err != nil {
-		t.Fatal(err)
-	}
-
-	ps := &[]Person{}
-	err := db.GetNodes(ps, "match (p:Person) where p.name = 'GetNodesTest' return p", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	fmt.Println(ps)
-}
-
 func TestGetMultiValueRecords(t *testing.T) {
 	db := &DB{}
 	if err := db.Connect("bolt://neo4j", "", ""); err != nil {

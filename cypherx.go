@@ -170,58 +170,6 @@ func (db *DB) GetNode(
 	return nil
 }
 
-func (db *DB) GetNodes(
-	dest interface{},
-	cypher string,
-	params map[string]interface{},
-	configurers ...Configurer,
-) error {
-	if !isValidPtr(dest) {
-		return NotValidPtrErr
-	}
-
-	rt := reflect.TypeOf(dest)
-
-	if rt.Elem().Kind() != reflect.Slice ||
-		rt.Elem().Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("invalid destination variable type %s, expect slice struct kind", rt.Elem().String())
-	}
-
-	m := &mapper{}
-	structType := rt.Elem().Elem()
-	if err := m.analyzeStruct(structType); err != nil {
-		return fmt.Errorf("failed to analyze struct type: %w", err)
-	}
-
-	resChan := make(chan *neo4j.Record)
-	errChan := make(chan error)
-
-	go db.fetchRecords(resChan, errChan, cypher, params, configurers...)
-
-	slicePtr := reflect.ValueOf(dest)
-	for res := range resChan {
-		node, ok := res.GetByIndex(0).(neo4j.Node)
-		if !ok {
-			return NotNodeTypeErr
-		}
-
-		st := reflect.New(structType)
-		props := node.Props
-		if err := m.scanProps(st, props); err != nil {
-			return fmt.Errorf("scan props failed: %w", err)
-		}
-
-		slicePtr.Elem().Set(reflect.Append(slicePtr.Elem(), st.Elem()))
-	}
-
-	select {
-	case err := <-errChan:
-		return err
-	default:
-		return nil
-	}
-}
-
 func (db *DB) fetchRecords(
 	resChan chan *neo4j.Record,
 	errChan chan error,
