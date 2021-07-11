@@ -104,6 +104,10 @@ func (m *mapper) analyzeStruct(t reflect.Type) error {
 		funcs = append(funcs, f)
 	}
 
+	if len(funcs) == 0 {
+		return fmt.Errorf("no public field in struct type %s", t.String())
+	}
+
 	m.assignFuncs = funcs
 	m.propNames = names
 

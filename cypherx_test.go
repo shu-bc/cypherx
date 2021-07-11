@@ -85,14 +85,28 @@ func TestGetMultiValueRecords(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resStruct := []struct {
-		A int
-		B string
-	}{}
+	t.Run("multiple simple value type", func(t *testing.T) {
+		resStruct := []struct {
+			A int
+			B string
+		}{}
 
-	if err := db.GetMultiValueRecords(&resStruct, "match (p:Person{name :'GetValues'}) return p.age, p.name", nil); err != nil {
-		t.Fatal(err)
-	}
+		if err := db.GetMultiValueRecords(&resStruct, "match (p:Person{name :'GetValues'}) return p.age, p.name", nil); err != nil {
+			t.Fatal(err)
+		}
 
-	fmt.Println(resStruct)
+		fmt.Println(resStruct)
+	})
+
+	t.Run("slice type", func(t *testing.T) {
+		resStruct := []struct {
+			Person []Person
+		}{}
+
+		if err := db.GetMultiValueRecords(&resStruct, "match (p:Person{name :'GetValues'}) return collect(p)", nil); err != nil {
+			t.Fatal(err)
+		}
+
+		fmt.Println(resStruct)
+	})
 }

@@ -16,7 +16,7 @@ type Configurer = func(*neo4j.TransactionConfig)
 
 var (
 	NotNodeTypeErr = errors.New("type neo4j.Node assertion failure, unexpected result type")
-	NotValidPtrErr = errors.New("dest must be a non-null pointer")
+	NotValidPtrErr = errors.New("destination variable must be a non-null pointer")
 
 	WithTxMetadata = neo4j.WithTxMetadata
 	WithTxTimeout  = neo4j.WithTxTimeout
