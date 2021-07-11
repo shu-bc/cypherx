@@ -114,6 +114,32 @@ func (m *mapper) analyzeStruct(t reflect.Type) error {
 	return nil
 }
 
+func (m *mapper) analyzeSlice(t reflect.Type) error {
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	if t.Kind() != reflect.Slice {
+		return fmt.Errorf("expect slice type to analyze, but got %s", t.Kind().String())
+	}
+
+	sliceElemType := t.Elem()
+
+	if c, ok := typeMapperCache.mapping[t]; ok {
+		m.assignFuncs = c.assignFuncs
+		m.propNames = c.propNames
+		return nil
+	}
+
+	assignFunc, err := generateAssignmentFunc(sliceElemType)
+	if err != nil {
+		return err
+	}
+	m.assignFuncs = []assignmentFunc{assignFunc}
+
+	return nil
+}
+
 func isValidPtr(i interface{}) bool {
 	rv := reflect.ValueOf(i)
 	return rv.Kind() == reflect.Ptr && !rv.IsNil()
@@ -143,6 +169,9 @@ func generateAssignmentFunc(rt reflect.Type) (assignmentFunc, error) {
 
 	case reflect.Struct:
 		return assignNodeToStructField, nil
+
+	case reflect.Slice:
+		return assignSliceValueToField, nil
 	}
 
 	return nil, fmt.Errorf("cannot generate assignment func for %s type", rt.String())
@@ -233,6 +262,36 @@ func assignNodeToStructField(f reflect.Value, v interface{}) error {
 
 	if err := m.scanProps(f.Addr(), node.Props); err != nil {
 		return fmt.Errorf("failed to scan props to struct: %w", err)
+	}
+	return nil
+}
+
+func assignSliceValueToField(f reflect.Value, v interface{}) error {
+	if !f.CanSet() {
+		return UnsettableValueErr
+	}
+
+	m, ok := typeMapperCache.mapping[f.Type()]
+	if !ok {
+		m = &mapper{}
+		if err := m.analyzeSlice(f.Type()); err != nil {
+			return fmt.Errorf("failed to analyze slice type %s: %w", f.Type().String(), err)
+		}
+	}
+
+	if reflect.TypeOf(v).Kind() != reflect.Slice {
+		return fmt.Errorf("unable to asssign a non-slice value")
+	}
+
+	rv := reflect.ValueOf(v)
+	elemAssignFunc := m.assignFuncs[0]
+	for i := 0; i < rv.Len(); i++ {
+		newElem := reflect.New(f.Type().Elem())
+		v := rv.Index(i)
+		if err := elemAssignFunc(newElem.Elem(), v.Interface()); err != nil {
+			return fmt.Errorf("failed to create new elem type value for slice: %w", err)
+		}
+		f.Set(reflect.Append(f, newElem.Elem()))
 	}
 	return nil
 }

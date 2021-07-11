@@ -2,6 +2,7 @@ package cypherx
 
 import (
 	"database/sql"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -27,6 +28,7 @@ func TestGenerateAssignmentFunc(t *testing.T) {
 			Name string
 			Age  int
 		}
+		Lawyers []string
 	}{}
 
 	t.Run("scanner type field", func(t *testing.T) {
@@ -126,5 +128,19 @@ func TestGenerateAssignmentFunc(t *testing.T) {
 		// check mapper cache
 		_, ok := typeMapperCache.mapping[reflect.TypeOf(s.Relative)]
 		assert.True(t, ok)
+	})
+
+	t.Run("slice filed", func(t *testing.T) {
+		fv := reflect.ValueOf(s).Elem().Field(6)
+		f, err := generateAssignmentFunc(fv.Type())
+		if err != nil {
+			t.Error(err)
+		}
+		lawyers := []string{"John", "Paul"}
+		if err := f(fv, lawyers); err != nil {
+			t.Error(err)
+		}
+		assert.Equal(t, s.Lawyers, lawyers)
+		fmt.Println(s)
 	})
 }
